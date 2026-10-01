@@ -1,0 +1,29 @@
+{
+  "version": "1.0",
+  "role_family": "Data & Machine Learning",
+  "roles": [
+    {
+      "id": "role_ml_engineer",
+      "canonical_title": "Machine Learning Engineer / Data Scientist",
+      "aliases": ["Data Scientist", "AI Engineer", "Deep Learning Engineer", "MLOps Engineer"],
+      "seniority_levels": {
+        "entry": {
+          "expected_sections": ["education", "skills", "projects", "experience"],
+          "typical_tools": ["Python", "PyTorch", "scikit-learn", "Pandas", "NumPy", "SQL", "Git", "Jupyter"],
+          "expected_metrics": ["Model accuracy / F1-score", "Dataset size processed", "AUC-ROC"],
+          "anti_patterns": ["Only listing Kaggle tutorial datasets (Titanic, Iris) without custom modeling", "Missing baseline model comparison"]
+        },
+        "mid_senior": {
+          "expected_sections": ["experience", "skills", "projects", "education"],
+          "typical_tools": ["PyTorch", "TensorFlow", "Hugging Face", "MLflow", "Kubeflow", "Docker", "ONNX", "Vector DBs", "FastAPI"],
+          "expected_metrics": ["Inference latency reduction (ms)", "Production serving QPS", "Business impact ($ revenue uplift, conversion %)", "Model drift monitoring"],
+          "anti_patterns": ["Describing modeling in isolation from production serving and monitoring", "No discussion of data validation or pipeline reliability"]
+        }
+      },
+      "review_focus": [
+        "Rigorous offline and online evaluation metrics (precision, recall, latency, drift)",
+        "End-to-end MLOps lifecycle from experimentation to containerized deployment"
+      ]
+    }
+  ]
+}

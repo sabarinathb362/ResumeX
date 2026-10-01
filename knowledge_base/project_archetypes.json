@@ -1,0 +1,44 @@
+{
+  "version": "1.0",
+  "project_archetypes": [
+    {
+      "id": "proj_distributed_cache",
+      "title": "High-Throughput Distributed Cache with Raft Consensus",
+      "gap_skills": ["Distributed Systems", "Go", "Concurrency", "Raft", "Redis"],
+      "difficulty": "Advanced",
+      "suggested_stack": ["Go", "gRPC", "Docker", "Prometheus", "Grafana"],
+      "deliverables": [
+        "In-memory key-value store with leader election and log replication via Raft",
+        "Benchmarking suite proving 15,000+ QPS under network partition scenarios",
+        "OpenTelemetry metrics instrumentation with Prometheus/Grafana dashboard"
+      ],
+      "resume_bullet_template": "Built distributed in-memory key-value store in Go implementing Raft consensus, sustaining 18,000 QPS with sub-5ms p99 latency during network failover testing."
+    },
+    {
+      "id": "proj_rag_pipeline",
+      "title": "Enterprise RAG Pipeline with Semantic Re-ranking",
+      "gap_skills": ["RAG", "Vector DBs", "PyTorch", "Hugging Face", "FastAPI"],
+      "difficulty": "Intermediate",
+      "suggested_stack": ["Python", "FastAPI", "Qdrant / Chroma", "BGE Embeddings", "Docker"],
+      "deliverables": [
+        "Asynchronous document ingestion pipeline with chunking and semantic vector indexing",
+        "Two-stage retrieval system combining dense semantic search and BM25 with cross-encoder re-ranking",
+        "Automated evaluation benchmark measuring Recall@5 and hallucination rate"
+      ],
+      "resume_bullet_template": "Developed asynchronous RAG microservice using FastAPI and Qdrant with two-stage BGE re-ranking, boosting retrieval Precision@5 by 34% across 10,000 technical documents."
+    },
+    {
+      "id": "proj_fullstack_analytics",
+      "title": "Real-Time Event Analytics Dashboard",
+      "gap_skills": ["React", "TypeScript", "WebSocket", "Node.js / FastAPI", "Kafka"],
+      "difficulty": "Intermediate",
+      "suggested_stack": ["TypeScript", "React", "Tailwind CSS", "FastAPI", "PostgreSQL", "WebSocket"],
+      "deliverables": [
+        "Real-time event streaming pipeline using WebSockets and message queue",
+        "Responsive, accessible dashboard visualizing live metrics with virtualized tables",
+        "End-to-end test suite using Playwright and Jest with 85%+ code coverage"
+      ],
+      "resume_bullet_template": "Architected real-time telemetry dashboard in React/TypeScript with WebSocket streaming, rendering 500+ live data points per second with zero UI jank."
+    }
+  ]
+}

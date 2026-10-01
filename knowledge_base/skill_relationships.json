@@ -1,0 +1,43 @@
+{
+  "version": "1.0",
+  "skill_relationships": [
+    {
+      "source_skill": "PostgreSQL",
+      "related": [
+        {"skill": "MySQL", "relation": "substitute", "transferability": 0.85, "rationale": "Both are ACID-compliant relational SQL engines with similar indexing and schema modeling."},
+        {"skill": "SQLite", "relation": "subset", "transferability": 0.8, "rationale": "Lightweight SQL database sharing standard SQL dialect."},
+        {"skill": "Oracle", "relation": "enterprise_equivalent", "transferability": 0.75, "rationale": "Enterprise relational database with similar SQL concepts."}
+      ]
+    },
+    {
+      "source_skill": "React",
+      "related": [
+        {"skill": "Next.js", "relation": "framework_extension", "transferability": 0.9, "rationale": "Next.js is built directly on React component and hooks model with server-side rendering."},
+        {"skill": "Vue", "relation": "substitute", "transferability": 0.75, "rationale": "Component-based reactive frontend framework with similar virtual DOM concepts."},
+        {"skill": "TypeScript", "relation": "ecosystem_pair", "transferability": 0.8, "rationale": "Frequently combined with React in modern frontend engineering."}
+      ]
+    },
+    {
+      "source_skill": "PyTorch",
+      "related": [
+        {"skill": "TensorFlow", "relation": "substitute", "transferability": 0.8, "rationale": "Both are tensor manipulation and deep learning frameworks with graph execution."},
+        {"skill": "JAX", "relation": "modern_alternative", "transferability": 0.75, "rationale": "Functional autodiff and accelerated computing framework."},
+        {"skill": "Hugging Face", "relation": "ecosystem_pair", "transferability": 0.85, "rationale": "Transformer models built predominantly on PyTorch."}
+      ]
+    },
+    {
+      "source_skill": "Docker",
+      "related": [
+        {"skill": "Kubernetes", "relation": "orchestration_partner", "transferability": 0.85, "rationale": "Kubernetes orchestrates Docker/containerd containers at cluster scale."},
+        {"skill": "Podman", "relation": "direct_substitute", "transferability": 0.95, "rationale": "Rootless container engine matching Docker CLI semantics."}
+      ]
+    },
+    {
+      "source_skill": "AWS",
+      "related": [
+        {"skill": "Google Cloud", "relation": "cloud_competitor", "transferability": 0.8, "rationale": "Equivalent core compute (EC2 vs GCE), storage (S3 vs GCS), and serverless (Lambda vs Cloud Functions)."},
+        {"skill": "Azure", "relation": "cloud_competitor", "transferability": 0.8, "rationale": "Enterprise cloud services with direct 1:1 service mappings."}
+      ]
+    }
+  ]
+}

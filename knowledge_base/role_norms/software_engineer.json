@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "role_family": "Software Engineering",
+  "roles": [
+    {
+      "id": "role_swe_backend",
+      "canonical_title": "Backend Software Engineer",
+      "aliases": ["Backend Developer", "Server Engineer", "API Engineer"],
+      "seniority_levels": {
+        "entry": {
+          "expected_sections": ["education", "skills", "projects", "experience"],
+          "typical_tools": ["Python", "Java", "Go", "Node.js", "PostgreSQL", "Docker", "Git", "REST"],
+          "expected_metrics": ["Response times (ms)", "Test coverage (%)", "Endpoints built"],
+          "anti_patterns": ["No code repository links", "Only academic coursework without hands-on projects", "Lack of testing mention"]
+        },
+        "mid": {
+          "expected_sections": ["experience", "skills", "projects", "education"],
+          "typical_tools": ["Distributed Systems", "PostgreSQL", "Redis", "Kafka", "Docker", "Kubernetes", "AWS", "CI/CD"],
+          "expected_metrics": ["Query optimization (%)", "API latency reduction (ms)", "System throughput (RPS)", "Uptime"],
+          "anti_patterns": ["Listing technologies without explaining architecture role", "Absence of database indexing or concurrency handling"]
+        },
+        "senior": {
+          "expected_sections": ["summary", "experience", "skills", "education"],
+          "typical_tools": ["System Design", "Microservices", "Scalability", "Event-Driven Architecture", "Cloud Architecture", "Observability"],
+          "expected_metrics": ["Scale (millions of users/events)", "Infrastructure cost reduction ($ or %)", "Team mentorship", "Availability SLA (99.9x%)"],
+          "anti_patterns": ["Purely tactical bullets with no business context or architectural leadership", "No mentorship or cross-team collaboration evidence"]
+        }
+      },
+      "review_focus": [
+        "System reliability, data modeling, concurrency, and API scalability",
+        "Clear quantifiable business and technical metrics",
+        "Evidence of automated testing (unit, integration) and CI/CD pipelines"
+      ]
+    },
+    {
+      "id": "role_swe_frontend",
+      "canonical_title": "Frontend Software Engineer",
+      "aliases": ["Frontend Developer", "Web Developer", "UI/UX Engineer"],
+      "seniority_levels": {
+        "entry": {
+          "expected_sections": ["education", "projects", "skills", "experience"],
+          "typical_tools": ["JavaScript", "TypeScript", "React", "HTML5", "CSS3", "Tailwind", "Git"],
+          "expected_metrics": ["Lighthouse performance score", "Responsive UI implementations", "Component reusability"],
+          "anti_patterns": ["No live portfolio or demo links", "Lack of responsive design mention"]
+        },
+        "mid_senior": {
+          "expected_sections": ["experience", "skills", "projects", "education"],
+          "typical_tools": ["TypeScript", "React", "Next.js", "State Management (Redux/Zustand)", "Web Performance", "Accessibility (WCAG)", "GraphQL"],
+          "expected_metrics": ["Core Web Vitals improvement (LCP, FID, CLS)", "Conversion / engagement increase (%)", "Bundle size reduction (%)"],
+          "anti_patterns": ["Treating CSS solely as cosmetic rather than performance/accessibility aware", "Lack of testing (Jest, Playwright, Cypress)"]
+        }
+      },
+      "review_focus": [
+        "Web performance, accessibility standards, responsive design, and state architecture",
+        "Working links to deployed applications or design systems"
+      ]
+    }
+  ]
+}

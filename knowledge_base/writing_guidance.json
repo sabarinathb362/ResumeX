@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "guidelines": [
+    {
+      "id": "guide_xyz_formula",
+      "title": "Google XYZ Bullet Formula",
+      "category": "bullet_writing",
+      "summary": "Accomplished [X] as measured by [Y], by doing [Z].",
+      "explanation": "Every bullet should start with an action verb describing what was accomplished, provide an objective metric of scale or improvement, and explain the technical tool or strategy utilized.",
+      "good_example": "Reduced API response times by 42% (from 350ms to 200ms) across 15 endpoints by implementing Redis caching and optimizing PostgreSQL query execution plans.",
+      "bad_example": "Responsible for working on backend APIs and making queries faster."
+    },
+    {
+      "id": "guide_metric_types",
+      "title": "Impact Metric Dimensions",
+      "category": "quantification",
+      "summary": "Quantify via Performance, Scale, Money, or Quality.",
+      "explanation": "Good resume metrics fit into four buckets: 1) Performance (latency, throughput, load time), 2) Scale (users, requests/sec, data size in GB/TB), 3) Financial/Time ($ saved, hours automated), 4) Reliability/Quality (test coverage %, error rate reduction, uptime SLA)."
+    },
+    {
+      "id": "guide_ai_likeness_avoidance",
+      "title": "Avoiding Generic & AI-Sounding Phrasing",
+      "category": "writing_style",
+      "summary": "Replace grandiose buzzwords with concrete engineering specifics.",
+      "explanation": "Phrases like 'spearheaded pivotal initiatives' or 'leveraged cutting-edge paradigms' sound hollow and generic. State specifically what tool was written, what bug was fixed, or what design decision was made."
+    }
+  ]
+}
