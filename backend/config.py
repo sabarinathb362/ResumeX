@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     ollama_base_url: str = "http://localhost:11434"
 
     # ── Embedding settings (Phase 5+) ────────────────────────────
-    embedding_model: str = "bge-small-en-v1.5"
+    embedding_model: str = "backend/models/bge-small-resumex"
     embedding_device: str = "auto"  # "auto" | "cuda" | "cpu"
 
     # ── Server ───────────────────────────────────────────────────
@@ -74,8 +74,9 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
 
     model_config = {
-        "env_file": ".env",
+        "env_file": [str(BASE_DIR / ".env"), str(BASE_DIR / "backend" / ".env")],
         "env_prefix": "RESUMEIQ_",
+        "extra": "ignore",
     }
 
 

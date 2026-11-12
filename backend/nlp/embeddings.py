@@ -52,7 +52,17 @@ def _get_model():
                 model_name, device,
             )
             from pathlib import Path
-            name = model_name if ("/" in model_name or Path(model_name).exists()) else f"BAAI/{model_name}"
+            from backend.config import BASE_DIR
+
+            if (BASE_DIR / model_name).exists():
+                name = str(BASE_DIR / model_name)
+            elif (BASE_DIR / "backend" / model_name).exists():
+                name = str(BASE_DIR / "backend" / model_name)
+            elif Path(model_name).exists():
+                name = str(Path(model_name).resolve())
+            else:
+                name = model_name if "/" in model_name else f"BAAI/{model_name}"
+
             _model = SentenceTransformer(name, device=device, trust_remote_code=False)
             logger.info("Embedding model loaded successfully.")
             return _model

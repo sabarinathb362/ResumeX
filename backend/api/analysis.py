@@ -41,7 +41,7 @@ class RunAnalysisRequest(BaseModel):
     response_model=AnalysisResponse,
     summary="Run complete analysis on a resume (optionally with a JD)",
 )
-async def run_analysis(
+def run_analysis(
     request: RunAnalysisRequest,
     db: Session = Depends(get_db),
 ):

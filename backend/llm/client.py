@@ -40,7 +40,7 @@ class LocalLLMClient:
         self.base_url = settings.ollama_base_url
         self.model = settings.llm_model
         self.fallback_model = settings.llm_fallback_model
-        self.timeout = 120  # seconds (allows model cold-start into VRAM)
+        self.timeout = 30  # seconds (gracefully fall back if inference is too slow)
         self._online_cache: tuple[float, bool] = (0.0, False)
 
     def is_online(self) -> bool:
