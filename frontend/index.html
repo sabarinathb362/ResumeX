@@ -4,6 +4,16 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      // Set the theme before first paint: the saved choice, else the system setting.
+      (function () {
+        var t = null;
+        try { t = localStorage.getItem('resumex-theme'); } catch (e) {}
+        if (t !== 'light' && t !== 'dark') t = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.dataset.theme = t;
+      })();
+    </script>
     <title>ResumeX | Resume analysis</title>
     <meta name="description" content="Privacy-preserving, local-first resume analysis. ATS scoring, job matching, and evidence-grounded feedback — all on your device." />
   </head>

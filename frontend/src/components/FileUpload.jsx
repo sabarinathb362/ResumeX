@@ -55,7 +55,7 @@ export default function FileUpload({ onFileSelect, accept, label, subtitle, disa
       <input
         ref={inputRef}
         type="file"
-        accept={accept || '.pdf,.docx,.doc'}
+        accept={accept || '.pdf,.docx,.doc,.tex,.typ'}
         onChange={handleChange}
         style={{ display: 'none' }}
         disabled={disabled}

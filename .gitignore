@@ -44,5 +44,12 @@ Thumbs.db
 
 *.npz
 .kb_embeddings.npz
-models/
+/models/
+backend/models/*
+!backend/models/__init__.py
+!backend/models/db_models.py
 backend/.env
+
+# Fine-tuning: dataset text and model weights
+training/data/
+outputs/

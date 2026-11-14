@@ -137,7 +137,14 @@ class JobQueue:
                 if asyncio.iscoroutinefunction(handler):
                     result = await handler(job.payload, progress_cb)
                 else:
-                    result = handler(job.payload, None)
+                    # Sync handlers (LLM-heavy, blocking) run in a worker thread so the event loop
+                    # keeps serving the editor; progress is marshalled back onto the loop.
+                    loop = asyncio.get_running_loop()
+
+                    def sync_progress(p: float, msg: str = ""):
+                        asyncio.run_coroutine_threadsafe(progress_cb(p, msg), loop)
+
+                    result = await asyncio.to_thread(handler, job.payload, sync_progress)
 
                 job.status = "done"
                 job.progress = 1.0

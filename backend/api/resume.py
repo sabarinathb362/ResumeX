@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 
 from backend.config import settings
@@ -17,6 +18,7 @@ from backend.schemas.resume import ResumeUploadResponse, ResumeData, ErrorRespon
 from backend.ingestion.pdf import extract_from_pdf
 from backend.ingestion.docx_extractor import extract_from_docx
 from backend.ingestion.latex import parse_latex_resume
+from backend.ingestion.source_resume import enrich_from_source, resume_from_typst, source_warnings
 
 router = APIRouter(prefix="/api/resume", tags=["resume"])
 
@@ -79,13 +81,20 @@ async def upload_resume(
     warnings = []
     try:
         if ext == ".pdf":
-            resume_data = extract_from_pdf(str(file_path))
+            resume_data = await run_in_threadpool(extract_from_pdf, str(file_path))
         elif ext in (".docx", ".doc"):
-            resume_data = extract_from_docx(str(file_path))
+            resume_data = await run_in_threadpool(extract_from_docx, str(file_path))
         elif ext == ".tex":
             text_str = content.decode("utf-8", errors="replace")
-            resume_data, tex_warnings = parse_latex_resume(text_str, filename=file.filename or "resume.tex")
-            warnings.extend(tex_warnings)
+            resume_data, _old_warnings = await run_in_threadpool(parse_latex_resume, text_str, file.filename or "resume.tex")
+            # Phase 5: real structure (doc_sections + "t<line>" lines) and line-numbered findings from the source.
+            # The inspector covers the old regex warnings (multicols, tabular, icons), so those are dropped.
+            report = await run_in_threadpool(enrich_from_source, resume_data, text_str, "tex")
+            warnings.extend(source_warnings(report))
+        elif ext == ".typ":
+            text_str = content.decode("utf-8", errors="replace")
+            resume_data, report = await run_in_threadpool(resume_from_typst, text_str, file.filename or "resume.typ")
+            warnings.extend(source_warnings(report))
         else:
             raise HTTPException(400, f"Parser not yet implemented for {ext}")
 

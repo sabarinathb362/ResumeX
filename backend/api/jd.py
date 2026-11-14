@@ -4,6 +4,7 @@ POST /api/jd/analyze
 """
 import uuid
 from fastapi import APIRouter, UploadFile, File, HTTPException, Depends, Form
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy.orm import Session
 from typing import Optional
 from pathlib import Path
@@ -47,7 +48,7 @@ async def analyze_jd(
                 tmp.write(content)
                 tmp_path = tmp.name
             try:
-                resume_data = extract_from_pdf(tmp_path)
+                resume_data = await run_in_threadpool(extract_from_pdf, tmp_path)
                 jd_text = resume_data.raw_text
             finally:
                 os.unlink(tmp_path)
@@ -57,7 +58,7 @@ async def analyze_jd(
                 tmp.write(content)
                 tmp_path = tmp.name
             try:
-                resume_data = extract_from_docx(tmp_path)
+                resume_data = await run_in_threadpool(extract_from_docx, tmp_path)
                 jd_text = resume_data.raw_text
             finally:
                 os.unlink(tmp_path)
@@ -73,7 +74,7 @@ async def analyze_jd(
 
     # Parse
     try:
-        jd_data = parse_jd(jd_text)
+        jd_data = await run_in_threadpool(parse_jd, jd_text)
     except Exception as e:
         raise HTTPException(422, f"Failed to parse JD: {str(e)}")
 

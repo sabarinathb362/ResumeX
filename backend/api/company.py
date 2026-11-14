@@ -18,6 +18,9 @@ router = APIRouter(prefix="/api/company", tags=["company"])
 class CompanyResearchRequest(BaseModel):
     jd_text: str
     company_name: Optional[str] = None
+    # Phase 4 privacy fix: the UI says "nothing leaves your machine", so the web lookup is opt-in
+    # per request AND gated by settings.company_web_lookup (default False).
+    allow_web: bool = False
 
 
 class CompanyIntel(BaseModel):
@@ -189,8 +192,10 @@ async def research_company(request: CompanyResearchRequest):
 
     intel = build_company_intel_from_jd(request.jd_text, company_name)
 
-    # Try web enrichment if company name was found
-    if company_name and company_name != "Unknown Company":
+    # Web enrichment only when the user opted in for this request and the server allows it.
+    # Only the company name is sent, never JD or resume text.
+    from backend.config import settings
+    if request.allow_web and settings.company_web_lookup and company_name != "Unknown Company":
         try:
             intel = await enrich_with_web_search(intel, company_name)
         except Exception as e:

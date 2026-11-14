@@ -61,7 +61,13 @@ def _get_model():
             elif Path(model_name).exists():
                 name = str(Path(model_name).resolve())
             else:
-                name = model_name if "/" in model_name else f"BAAI/{model_name}"
+                # A path-like name that doesn't exist locally is NOT a Hub id.
+                if model_name.startswith(("models/", "backend/", "./")):
+                    logger.warning("Fine-tuned embedder '%s' not found; using %s",
+                                   model_name, settings.embedding_fallback_model)
+                    name = settings.embedding_fallback_model
+                else:
+                    name = model_name if "/" in model_name else f"BAAI/{model_name}"
 
             _model = SentenceTransformer(name, device=device, trust_remote_code=False)
             logger.info("Embedding model loaded successfully.")

@@ -1,6 +1,7 @@
 """
 API routes — Analysis: ATS + Hybrid Matching + Readability (Phases 2, 4, 10).
 POST /api/analysis/run
+POST /api/analysis/{id}/deep   start the LLM deep review (background job, progress over SSE)
 GET  /api/analysis/{id}
 GET  /api/analysis/{id}/ats
 GET  /api/analysis/{id}/match
@@ -14,6 +15,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
 
+from backend.config import settings
 from backend.database import get_db
 from backend.models.db_models import Analysis, Resume, JobDescription
 from backend.schemas.resume import ResumeData
@@ -33,7 +35,7 @@ router = APIRouter(prefix="/api/analysis", tags=["analysis"])
 class RunAnalysisRequest(BaseModel):
     resume_id: str
     jd_id: Optional[str] = None
-    use_llm: bool = True
+    use_llm: bool = False      # 2.0: first paint is deterministic; LLM work runs as a deep_review job
 
 
 @router.post(
@@ -81,6 +83,13 @@ def run_analysis(
     # One ranked, line-anchored list for the dashboard and editor
     insights = build_insights(resume_data, ats_result, readability_result)
 
+    # Which embedding model backed the semantic part of the match (None = word-overlap fallback / no JD)
+    embedding_name = None
+    if match_result is not None:
+        from backend.nlp import embeddings
+        if embeddings.is_available():
+            embedding_name = settings.embedding_model.rstrip("/").split("/")[-1]
+
     # Persist analysis
     analysis_id = str(uuid.uuid4())
     db_analysis = Analysis(
@@ -100,11 +109,15 @@ def run_analysis(
             "readability_rubric": readability_result.rubric_version,
             "parser": resume_data.parser_version,
             "rri_llm_used": readability_result.llm_used,
+            "llm_models": ({"bullet_grades": settings.llm_model, "skim_test": settings.llm_model}
+                           if readability_result.llm_used else {}),
+            "embedding_model": embedding_name,
             "app_version": "2.1.0",
         },
     )
     db.add(db_analysis)
     db.commit()
+    versions = dict(db_analysis.versions)
 
     return AnalysisResponse(
         id=analysis_id,
@@ -116,8 +129,18 @@ def run_analysis(
         readability_score=readability_result.overall_score,
         match_result=match_result,
         insights=insights,
+        versions=versions,
         created_at=str(datetime.now(timezone.utc)),
     )
+
+
+@router.post("/{analysis_id}/deep", summary="Start the LLM deep review as a background job")
+def start_deep_review(analysis_id: str, db: Session = Depends(get_db)):
+    from backend.jobs.queue import job_queue
+    if not db.query(Analysis).filter(Analysis.id == analysis_id).first():
+        raise HTTPException(404, "Analysis not found")
+    job_id = job_queue.enqueue("deep_review", {"analysis_id": analysis_id})
+    return {"job_id": job_id, "events": f"/api/jobs/{job_id}/events"}
 
 
 @router.get("/{analysis_id}", summary="Get full analysis results")
@@ -136,6 +159,8 @@ async def get_analysis(analysis_id: str, db: Session = Depends(get_db)):
         readability_result=ReadabilityResult.model_validate(db_analysis.readability_result_json) if db_analysis.readability_result_json else None,
         readability_score=db_analysis.readability_score,
         insights=[Finding.model_validate(f) for f in (db_analysis.readability_result_json or {}).get("insights", [])],
+        ai_match_percentage=((db_analysis.match_result_json or {}).get("ai_judge") or {}).get("ai_match_percentage"),
+        versions=db_analysis.versions or {},
         created_at=str(db_analysis.created_at),
     )
 

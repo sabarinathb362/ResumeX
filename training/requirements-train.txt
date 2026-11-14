@@ -1,0 +1,4 @@
+# Fine-tuning environment (WSL2 Ubuntu + NVIDIA driver on Windows). Separate from the API venv.
+unsloth            # pulls torch, transformers, trl, peft, accelerate, bitsandbytes at compatible versions
+datasets>=2.20
+httpx>=0.27

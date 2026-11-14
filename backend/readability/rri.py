@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional
@@ -68,6 +69,60 @@ ACTION_VERBS = {
 PRESENT_FORMS = {"build", "design", "develop", "implement", "lead", "manage", "own", "train",
                  "evaluate", "test", "analyze", "analyse", "maintain", "deploy", "automate",
                  "research", "write", "create", "optimize", "optimise", "benchmark", "fine-tune"}
+# Base forms of verbs that open achievement bullets in any field (retail, design, healthcare,
+# operations, teaching ...), not only software. Inflections are handled by _is_action_word().
+GENERAL_VERBS = {
+    "achieve", "adapt", "administer", "advise", "advocate", "allocate", "answer", "apply", "arrange",
+    "assemble", "assess", "assign", "attend", "audit", "balance", "bill", "book", "budget", "calculate",
+    "calibrate", "campaign", "care", "chair", "check", "close", "coach", "collaborate", "collect",
+    "communicate", "compile", "complete", "compose", "conduct", "consolidate", "consult", "convert",
+    "cook", "coordinate", "counsel", "count", "curate", "customize", "deliver", "demonstrate",
+    "diagnose", "direct", "discover", "display", "distribute", "draft", "draw", "earn", "edit",
+    "educate", "enforce", "engage", "enter", "establish", "exceed", "execute", "expand", "facilitate",
+    "file", "film", "forecast", "fundraise", "generate", "greet", "guide", "handle", "hire", "host",
+    "identify", "illustrate", "improve", "increase", "initiate", "inspect", "install", "interview",
+    "introduce", "investigate", "invoice", "launch", "lecture", "market", "measure", "mediate",
+    "mentor", "merchandise", "moderate", "monitor", "negotiate", "observe", "open", "operate", "order",
+    "organize", "organise", "oversee", "pack", "partner", "perform", "photograph", "pitch", "plan",
+    "prepare", "present", "price", "process", "procure", "produce", "promote", "protect", "provide",
+    "publish", "purchase", "raise", "receive", "reconcile", "record", "recruit", "redesign", "reduce",
+    "repair", "replenish", "report", "represent", "resolve", "respond", "restock", "restructure",
+    "review", "revamp", "scan", "schedule", "secure", "select", "sell", "serve", "sew", "ship",
+    "simplify", "sketch", "solve", "sort", "source", "standardize", "start", "stock", "streamline",
+    "style", "supervise", "survey", "tailor", "teach", "track", "translate", "treat", "troubleshoot",
+    "tutor", "update", "upgrade", "upsell", "use", "utilize", "verify", "volunteer", "welcome", "win",
+    "mark", "offer", "set", "take", "run", "grow", "lead", "build", "write", "make", "hold", "keep",
+    "meet", "give", "send", "speak", "drive", "cut", "save", "design", "develop", "create", "manage",
+    "train", "test", "analyze", "analyse", "evaluate", "research", "maintain", "deploy", "automate",
+    "implement", "optimize", "optimise", "own", "double", "triple", "boost", "transform",
+}
+IRREGULAR_PAST = {"sold", "took", "ran", "grew", "led", "built", "wrote", "made", "held", "kept", "met",
+                  "gave", "sent", "spoke", "drove", "taught", "won", "drew", "began", "brought", "bought",
+                  "chose", "found", "got", "oversaw", "rose", "sought", "spent", "stood", "undertook",
+                  "withdrew", "set", "cut", "put", "shot", "sewn", "sewed"}
+
+
+def _is_action_word(w: str) -> bool:
+    """True for a verb in any common form: sell / sells / sold, process / processed, plan / planned."""
+    w = w.lower()
+    if w in ACTION_VERBS or w in PRESENT_FORMS or w in IRREGULAR_PAST or w in GENERAL_VERBS:
+        return True
+    stems = set()
+    if w.endswith("ies"):
+        stems.add(w[:-3] + "y")
+    if w.endswith("ied"):
+        stems.add(w[:-3] + "y")
+    if w.endswith("es"):
+        stems.add(w[:-2])
+    if w.endswith("s"):
+        stems.add(w[:-1])
+    if w.endswith("ed"):
+        stems |= {w[:-2], w[:-1]}
+        if len(w) > 5 and w[-3] == w[-4]:
+            stems.add(w[:-3])                       # planned -> plan
+    return bool(stems & GENERAL_VERBS) or (w.endswith("ed") and len(w) > 4 and w not in {"based", "need", "used", "speed"})
+
+
 WEAK_OPENERS = re.compile(
     r"^(working on|worked on|responsible for|helped|helping|assisted|assisting|involved in|"
     r"participated in|part of|was part of|exposure to|familiar with|learning|learned|"
@@ -82,13 +137,19 @@ METRIC = re.compile(
     r"\b\d[\d,.]*\s?(?:k|K|M|B)?\+?\s(?:users?|customers?|requests?|images?|samples?|records?|"
     r"rows?|students?|people|families|participants?|teams?|members?|hours?|days?|weeks?|"
     r"ms|seconds?|minutes?|fps|qps|endpoints?|apis?|models?|classes|nodes?|devices?|"
-    r"villages?|downloads?|stars?|commits?)\b|\btop\s?\d+|\b#\d+\b|\b\d+\s?(?:st|nd|rd|th)\s+place)",
+    r"villages?|downloads?|stars?|commits?|clients?|guests?|patients?|orders?|items?|calls?|tickets?|"
+    r"employees?|staff|events?|products?|accounts?|projects?|pieces?|units?|stores?|locations?|"
+    r"sales|leads?|visitors?|followers?|subscribers?|pages?|articles?|designs?|campaigns?|classes?|"
+    r"months?|years?|shifts?|sites?|vendors?|suppliers?|volunteers?|donors?|cases?|transactions?)\b|"
+    r"\btop\s?\d+|\b#\d+\b|\b\d+\s?(?:st|nd|rd|th)\s+place|\b(?:twice|thrice)\b|\b\d+\s?times\b)",
     re.I)
 OUTCOME = re.compile(
     r"\b(achiev\w*|reduc\w*|improv\w*|increas\w*|decreas\w*|cut(ting)?|sav(ed|ing)|enabl\w*|"
     r"resulting|leading to|so that|boost\w*|accelerat\w*|published|won|ranked|adopted|"
     r"used by|serving|lower(ed|ing)|rais(ed|ing)|eliminat\w*|prevent\w*|recall|precision|"
-    r"accuracy|f1|latency|throughput|uptime|faster|slower|fewer|more than)\b", re.I)
+    r"accuracy|f1|latency|throughput|uptime|faster|slower|fewer|more than|award\w*|promot\w*|"
+    r"exceed\w*|earned|grew|growth|recogni[sz]ed|selected|retained|record|sold out|"
+    r"employee of the (?:month|year))\b", re.I)
 PASSIVE = re.compile(r"\b(was|were|been|being|is|are)\s+\w+ed\b(\s+by\b)?", re.I)
 FIRST_PERSON = re.compile(r"\b(I|me|my|mine)\b")
 
@@ -142,6 +203,9 @@ def _known_skills() -> set[str]:
         return set()
 
 
+_CAP_STOP = {"the", "and", "for", "with", "from", "into", "this", "that", "our", "all", "new"}
+
+
 def _named_things(text: str, context_tags: list[str]) -> list[str]:
     """Concrete nouns a reviewer can check: tools, acronyms, model names, proper nouns."""
     found = []
@@ -156,6 +220,8 @@ def _named_things(text: str, context_tags: list[str]) -> list[str]:
         if re.match(r"^[A-Z]{2,}[\w-]*$", w) or re.match(r"^[A-Z][a-z]+[A-Z]\w*$", w) \
                 or re.match(r"^[A-Za-z]+-?\d+\w*$", w):
             found.append(w)
+        elif re.match(r"^[A-Z][a-z]{2,}$", w) and w.lower() not in _CAP_STOP:
+            found.append(w)                 # a name mid-sentence: an employer, client, product, place
     for t in context_tags:
         if t and t.lower() in low:
             found.append(t)
@@ -258,9 +324,10 @@ def grade_statement(st: Statement, sec: DocSection, entry: DocEntry, current: bo
         text = m.group(2)  # "Table Tennis – Represented Kollam District…" -> grade the clause
     words = _words(text)
     first = words[0].lower() if words else ""
+    if first.endswith("ly") and len(words) > 1:
+        first = words[1].lower()            # "Thoroughly scan ..." opens with an adverb, then the verb
     weak = bool(WEAK_OPENERS.search(text))
-    action = (not weak) and (first in ACTION_VERBS or (current and first in PRESENT_FORMS)
-                             or (first.endswith("ed") and len(first) > 4 and first not in {"based", "need", "used"}))
+    action = (not weak) and _is_action_word(first)
     named = _named_things(text, entry.tags)
     metric_pos = _first_metric_pos(text)
     metric = metric_pos is not None
@@ -273,13 +340,13 @@ def grade_statement(st: Statement, sec: DocSection, entry: DocEntry, current: bo
     if weak:
         reasons.append(f'Opens with "{" ".join(words[:2])}" — describes involvement, not what you did')
     elif not action:
-        reasons.append("Doesn't start with an action verb")
+        reasons.append("Doesn't open with a verb that says what you did")
     if not specific:
         missing.append("specifics")
-        reasons.append("No named tool, system, dataset or number")
+        reasons.append("Nothing specific a reader can check (a named product, tool, client, place or number)")
     if not outcome:
         missing.append("outcome")
-        reasons.append("No result — what changed because of this work?")
+        reasons.append("No result: it doesn't say what changed because you did this")
     elif not metric:
         missing.append("metric")
     if len(vague_hits) >= 2:
@@ -327,6 +394,7 @@ def trim_filler(text: str) -> Optional[str]:
     if t != text and not t.rstrip().endswith("."):
         t = t.rstrip(" ,") + "."
     t = re.sub(r"\b(successfully|effectively|various)\s+", "", t, flags=re.I)
+    t = re.sub(r"\bin order to\b", "to", t, flags=re.I)
     t = re.sub(r"\s{2,}", " ", t).strip()
     return t if t != text.strip() and len(t) > 20 else None
 
@@ -461,7 +529,7 @@ def run_rri(resume: ResumeData, jd_requirements: Optional[list[str]] = None,
     else:
         add(dim, "Nothing measurable for a skimmer to latch onto",
             "No bullet contains a number, and there's no publication or role title that stands out.",
-            "Add one concrete result per entry (accuracy, users, time saved, size of data).", 8, action="add")
+            "Add one concrete result per entry: a number, a before/after, or who benefited.", 8, action="add")
     d1 = min(20, s1)
 
     # ═════════ 2. Impact & evidence density (20) ═════════════════
@@ -471,16 +539,30 @@ def run_rri(resume: ResumeData, jd_requirements: Optional[list[str]] = None,
         avg = sum(GRADE_VALUE[g.grade] * SECTION_WEIGHT.get(g.section, 1.0) for g in grades) / wsum
         d2 = 20 * avg
         weak = [g for g in grades if g.grade in ("C", "D")]
-        for g in sorted(weak, key=lambda x: -SECTION_WEIGHT.get(x.section, 1.0) * (GRADE_VALUE["B"] - GRADE_VALUE[x.grade]))[:6]:
+        no_result = [g for g in grades if not g.has_outcome]
+        if len(no_result) >= 4 and len(no_result) >= 0.5 * len(grades):
+            # One headline for the pattern, so the list isn't just the same note repeated per bullet.
+            by_grade = Counter(g.grade for g in grades)
+            add(dim, f"{len(no_result)} of {len(grades)} bullets describe a duty without a result",
+                "A reviewer learns what the job involved, not what you achieved in it. Bullet grades: "
+                + ", ".join(f"{by_grade[k]} {k}" for k in "ABCD" if by_grade[k]) + " (A = action, specifics and a number).",
+                "Start with your most recent role: for each bullet add what changed, by how much, or for whom.",
+                round(20 - d2, 1), line_ids=[i for g in no_result for i in g.line_ids],
+                stmt_ids=[g.id for g in no_result], action="rewrite", severity=Severity.HIGH)
+        for g in sorted(weak, key=lambda x: -SECTION_WEIGHT.get(x.section, 1.0) * (GRADE_VALUE["B"] - GRADE_VALUE[x.grade]))[:4]:
             sec, e = entry_of[g.id]
             w = SECTION_WEIGHT.get(g.section, 1.0)
             pts = 20 * w * (GRADE_VALUE["B"] - GRADE_VALUE[g.grade]) / wsum
-            where = {"experience": "role", "projects": "project"}.get(g.section, "entry")
-            add(dim, f'Weak bullet ({g.grade}) in {where} "{_short(e.title or sec.heading, 40)}"',
-                f'"{_short(g.text, 90)}" — ' + "; ".join(g.reasons) + ".",
+            problem = ("Reads as involvement, not action" if WEAK_OPENERS.search(g.text) else
+                       "Doesn't say what you did" if "action" in g.missing else
+                       "No result stated" if "outcome" in g.missing else
+                       "Nothing specific to check" if "specifics" in g.missing else
+                       "Result has no number")
+            add(dim, f'{problem}: "{_short(g.text, 62)}"',
+                f"In {_short(e.title or sec.heading, 48)} (bullet grade {g.grade}). " + ". ".join(g.reasons) + ".",
                 _question_for(g), pts, line_ids=g.line_ids, stmt_ids=[g.id], action="rewrite",
                 suggestion=_template_for(g, e),
-                severity=Severity.HIGH if (g.section == "experience" and g.grade == "D") else None)
+                severity=Severity.MEDIUM if (g.section == "experience" and g.grade == "D") else None)
         buried = [g for g in grades if g.has_metric and (g.metric_position or 0) >= SKIM_WORDS]
         for g in buried[:4]:
             sec, e = entry_of[g.id]
@@ -511,15 +593,15 @@ def run_rri(resume: ResumeData, jd_requirements: Optional[list[str]] = None,
             trimmed = trim_filler(g.text)
             add(dim, f"Vague wording in \"{_short(g.text, 55)}\"",
                 "Phrases like " + ", ".join(f'"{x}"' for x in v[:3]) +
-                " could describe anyone's project; they take space without adding evidence.",
-                "Replace with the concrete thing: which model, dataset, device, or user group.",
+                " could appear on anyone's resume; they take space without adding evidence.",
+                "Replace it with the concrete thing: what exactly, for whom, or how much.",
                 1.2, line_ids=g.line_ids, stmt_ids=[g.id], action="rewrite", suggestion=trimmed,
                 severity=Severity.LOW)
         if sum_vague and first_sentence:
             add(dim, "Profile relies on generic phrases",
                 "Your profile uses " + ", ".join(f'"{x}"' for x in sorted(set(s.lower() for s in sum_vague))[:4]) +
                 ". Reviewers read these as filler.",
-                "Swap each for a fact from your resume (a project result, the IEEE paper, your internship).",
+                "Swap each for a fact from your resume: a result, a role you held, or an award.",
                 min(3, len(sum_vague)), line_ids=[i for st in summary_stmts for i in st.line_ids],
                 stmt_ids=[st.id for st in summary_stmts], action="rewrite", severity=Severity.LOW)
     else:
@@ -547,7 +629,10 @@ def run_rri(resume: ResumeData, jd_requirements: Optional[list[str]] = None,
         for f in ph.findings[:5]:
             d4 -= 5 if f.severity == "critical" else 2
             ids = [l.id for l in resume.lines if f.span and f.span.lower() in l.text.lower()][:3]
-            add(dim, f"Template text left in: \"{f.span}\"", f.message, f.remediation,
+            add(dim, f"Template text left in: \"{f.span}\"",
+                f"\"{f.span}\" looks like sample text from a resume template, not your own details. "
+                "A reviewer who sees it assumes the resume was not finished.",
+                f"Replace \"{f.span}\" with your real details, on every line where it appears.",
                 5 if f.severity == "critical" else 2, line_ids=ids, action="edit",
                 severity=Severity.CRITICAL if f.severity == "critical" else Severity.HIGH)
     except Exception:
@@ -702,7 +787,7 @@ def run_rri(resume: ResumeData, jd_requirements: Optional[list[str]] = None,
                 add(dim, "Missing the evidence types reviewers look for",
                     "For this role reviewers look for: " + "; ".join(mets) + ". Not found: " +
                     "; ".join(m for m in mets if m not in hit) + ".",
-                    "Where you know them, state dataset size, baselines you beat, or evaluation metrics.",
+                    "Where you know them, state the scale of the work and how the result was measured.",
                     1, action="add", norm_ref=f"{ref}/expected_metrics", severity=Severity.LOW)
         anti = lvl.get("anti_patterns", [])
         if anti and not re.search(r"baseline|compared|vs\.?|outperform", res_low):
@@ -828,14 +913,14 @@ def _identity_line(resume: ResumeData, role: Optional[str]) -> Optional[str]:
 
 def _question_for(g: StatementGrade) -> str:
     if "action" in g.missing:
-        return ("Say what YOU did, starting with a verb (Built / Evaluated / Fine-tuned / Automated), "
+        return ("Say what you did, starting with a verb (Led / Built / Sold / Organised), "
                 "then the specific thing, then the result.")
     if "outcome" in g.missing:
-        return "Add the result: what improved, how much, or who used it? (accuracy, time saved, users, size of data)"
+        return "Add the result: what changed, by how much, or for whom (a number, a before/after, or who benefited)."
     if "specifics" in g.missing:
-        return "Name the concrete thing: which model, dataset, tool, or system?"
+        return "Name the concrete thing: which product, tool, client, place or system."
     if "metric" in g.missing:
-        return "You state an outcome — can you put a number on it?"
+        return "You state an outcome. Put a number on it if you can."
     return "Tighten the wording."
 
 
@@ -846,9 +931,9 @@ def _template_for(g: StatementGrade, e: DocEntry) -> Optional[str]:
     text = text.rstrip(". ")
     if "action" in g.missing and WEAK_OPENERS.search(text):
         rest = WEAK_OPENERS.sub("", text).strip(" ,")
-        text = f"[Built / Evaluated / Automated — what you did] {rest}"
+        text = f"[what you did — start with a verb] {rest}"
     if "outcome" in g.missing:
-        return text + ", [result — e.g. accuracy, time saved, users, size of data]."
+        return text + ", [result — a number, a before/after, or who benefited]."
     if "metric" in g.missing:
         return text + " [add a number if you have one]."
     return text + "." if text != g.text.rstrip(". ") else None
@@ -875,7 +960,7 @@ def _llm_grade_vote(grades: list[StatementGrade], entry_of) -> Optional[bool]:
         "type": "object", "properties": {"id": {"type": "string"}, "grade": {"type": "string", "enum": ["A", "B", "C", "D"]},
                                           "reason": {"type": "string"}}, "required": ["id", "grade"]}}},
               "required": ["grades"]}
-    resp = client.generate(BULLET_GRADER_SYSTEM, json.dumps(payload), json_schema=schema, temperature=0.0)
+    resp = client.generate(BULLET_GRADER_SYSTEM, json.dumps(payload), json_schema=schema, temperature=0.0, tier="deep")
     if not resp.raw_json:
         return None
     by_id = {x.get("id"): x for x in resp.raw_json.get("grades", []) if isinstance(x, dict)}
@@ -904,11 +989,12 @@ def _llm_skim_vote(skim_text: str) -> Optional[dict]:
         "role_family": {"type": "string", "enum": list(ROLE_FAMILIES.keys()) + ["unclear"]},
         "seniority": {"type": "string"}, "strengths": {"type": "array", "items": {"type": "string"}}},
         "required": ["role_family", "strengths"]}
+    # At temperature 0 the seed has no effect, so three seeded calls returned the same
+    # answer at 3x the latency. One deterministic call on the deep tier is equivalent.
     votes = []
-    for seed in (11, 23, 37):  # 3 fixed seeds, majority vote (plan §10)
-        r = client.generate(SKIM_TEST_SYSTEM, skim_text[:3000], json_schema=schema, temperature=0.0, seed=seed)
-        if r.raw_json:
-            votes.append(r.raw_json)
+    r = client.generate(SKIM_TEST_SYSTEM, skim_text[:3000], json_schema=schema, temperature=0.0, tier="deep")
+    if r.raw_json:
+        votes.append(r.raw_json)
     if not votes:
         return None
     from collections import Counter

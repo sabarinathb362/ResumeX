@@ -30,18 +30,27 @@ async def job_events(job_id: str):
         raise HTTPException(404, "Job not found")
 
     async def event_generator():
+        import json
         queue = await subscribe_progress(job_id)
         try:
+            current = job_queue.get_job(job_id)          # finished before we subscribed?
+            if current and current["status"] in ("done", "failed"):
+                yield f"data: {json.dumps({'job_id': job_id, 'progress': 1.0, 'done': True, 'result': current['result'], 'error': current['error']})}\n\n"
+                return
             while True:
                 try:
-                    event = await asyncio.wait_for(queue.get(), timeout=30)
+                    event = await asyncio.wait_for(queue.get(), timeout=5)
                     import json
                     yield f"data: {json.dumps(event)}\n\n"
                     if event.get("done"):
                         break
                 except asyncio.TimeoutError:
-                    # Send keepalive
-                    yield f": keepalive\n\n"
+                    # No event for a few seconds: check the job row, so a missed "done" can't hang the client
+                    current = job_queue.get_job(job_id)
+                    if current and current["status"] in ("done", "failed"):
+                        yield f"data: {json.dumps({'job_id': job_id, 'progress': 1.0, 'done': True, 'result': current['result'], 'error': current['error']})}\n\n"
+                        break
+                    yield ": keepalive\n\n"
         finally:
             unsubscribe_progress(job_id, queue)
 

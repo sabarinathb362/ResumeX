@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Optional
 
 import pymupdf
@@ -33,10 +33,15 @@ from backend.schemas.resume import (
     TextBlock, SourceSpan, LayoutLine, Statement, DocEntry, DocSection, Publication,
 )
 
-PARSER_VERSION = "2.0"
+PARSER_VERSION = "2.1"
 
-BULLET_CHARS = "•●▪■◦‣⁃►▶➢➤→–-*·○"
-BULLET_RE = re.compile(r"^\s*[•●▪■◦‣⁃►▶➢➤→*·○]\s*")
+BULLET_CHARS = "•●▪■◦‣⁃►▶➢➤→–-*·○◆◇❖✓✔➔»▫◾"
+# A bullet is one of the glyphs above, any private-use character (Word's Symbol / Wingdings bullets
+# come out of a PDF as U+F0A7, U+F0B7, ... and icon fonts do the same), or a hyphen followed by a space
+# and a letter ("- Built ..."). Without the private-use case a whole Word-made resume read as one bullet.
+BULLET_RE = re.compile(r"^\s*(?:[•●▪■◦‣⁃►▶➢➤→*·○◆◇❖✓✔➔»▫◾-]\s*|-\s+(?=[A-Za-z(\"“]))")
+# "OBJECTIVE: Design apparel print for ..." — a section label and its text on one row
+INLINE_HEAD_RE = re.compile(r"^([A-Z][A-Za-z &/]{2,28}):\s+(\S.{12,})$")
 DASH_SPLIT_RE = re.compile(r"\s+[—–|]\s+|\s+-\s+")
 
 MONTH = r"(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)"
@@ -87,6 +92,9 @@ def classify_heading(text: str) -> tuple[Optional[str], list[str]]:
         kinds = ["interests"] + [k for k in kinds if k != "interests"]
     if "programming language" in t:
         kinds = ["skills"]
+    # "Volunteer Experience" is volunteering (it also matches "experience")
+    if "volunteer" in kinds and kinds[0] != "volunteer":
+        kinds = ["volunteer"] + [k for k in kinds if k != "volunteer"]
     return (kinds[0] if kinds else None), kinds
 
 
@@ -166,7 +174,7 @@ def _group_rows(items, page_num, start_idx) -> list["Row"]:
         fw_bold = False
         for sp in spans_all:
             st = sp["text"].strip()
-            if not st or all(c in BULLET_CHARS for c in st):
+            if not st or all(c in BULLET_CHARS or "" <= c <= "" for c in st):
                 continue
             fw_bold = isb(sp)
             break
@@ -394,8 +402,16 @@ def parse_pdf(file_path: str) -> ResumeData:
     # ── sections ────────────────────────────────────────────────
     header_rows: list[Row] = []
     sections: list[tuple[Row, list[Row]]] = []
+    inline_rows: dict[str, Row] = {}
     for r in rows:
-        if _is_heading(r, body, heading_styles) and not (not sections and r is rows[0]):
+        inline = INLINE_HEAD_RE.match(r.text) if (r.first_word_bold and r.bold_ratio < 0.6 and r is not rows[0]) else None
+        if inline and classify_heading(inline.group(1))[0] == "summary":
+            # label + text on one row: the label is the heading, the rest is the section's content
+            head = replace(r, text=inline.group(1))
+            content = replace(r, text=inline.group(2), is_bullet=False, first_word_bold=False, bold_ratio=0.0)
+            sections.append((head, [content]))
+            inline_rows[r.id] = r
+        elif _is_heading(r, body, heading_styles) and not (not sections and r is rows[0]):
             r.role = "heading"
             sections.append((r, []))
         elif sections:
@@ -431,6 +447,8 @@ def parse_pdf(file_path: str) -> ResumeData:
             source_span=SourceSpan(page=h.page, text=h.text, bbox=h.bbox),
         ))
 
+    for r in inline_rows.values():
+        r.role = "statement"          # the row is content; its label is carried by the section heading
     _fill_legacy_fields(resume, doc_sections, {r.id: r for r in rows})
 
     resume.sections = legacy_sections
@@ -471,6 +489,32 @@ def _segment_entries(sid: str, kind: str, body_rows: list[Row], counter: list[in
     def flush():
         if cur:
             entries.append(_build_entry(sid, len(entries), kind, cur, counter))
+
+    # Plain-weight layouts (common in Word templates): no bold or larger title rows, but the
+    # description is bulleted. A non-bullet row set to the LEFT of the bullets starts a new entry once
+    # the current one has bullets; a non-bullet row at the bullets' indent is a wrapped bullet line.
+    bullets = [r for r in body_rows if r.is_bullet]
+    if kind in ENTRY_SECTIONS and not any_bold_lead and not size_titles and len(bullets) >= 2:
+        xs = sorted(r.bbox[0] for r in bullets)
+        bullet_x = xs[len(xs) // 2]
+        has_bullets = False
+        for r in body_rows:
+            t = _strip_bullet(r.text)
+            outdented = r.bbox[0] < bullet_x - 4
+            dated = bool(DATE_RANGE_RE.search(t) or SINGLE_DATE_RE.search(t)) and len(t.split()) <= 12
+            starts = (not r.is_bullet) and (outdented or (dated and has_bullets))
+            if starts and (cur is None or has_bullets):
+                flush()
+                cur = {"title": [r], "rest": [], "plain": True}
+                has_bullets = False
+            elif cur is None:
+                cur = {"title": [], "rest": [r], "plain": True}
+                has_bullets = r.is_bullet
+            else:
+                cur["rest"].append(r)
+                has_bullets = has_bullets or r.is_bullet
+        flush()
+        return entries
 
     prev_title = False
     for r in body_rows:
@@ -533,6 +577,8 @@ def _build_entry(sid: str, idx: int, kind: str, cur: dict, counter: list[int]) -
             desc.append(r)
     if meta:
         e.subtitle = " · ".join(_strip_bullet(r.text) for r in meta)
+        if cur.get("plain"):
+            e.subtitle = _remove_dates(e.subtitle).strip(" ·,-–") or e.subtitle
         e.meta_line_ids = [r.id for r in meta]
         for r in meta:
             r.role = "meta"

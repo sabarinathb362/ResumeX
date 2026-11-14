@@ -2,7 +2,19 @@
 ResumeIQ — FastAPI Application Entry Point.
 """
 import asyncio
+import os
 from contextlib import asynccontextmanager
+
+# Load pyarrow's native libraries now, on the main thread, before anything imports torch.
+# sentence-transformers pulls in pandas -> pyarrow the first time embeddings are used, which happens
+# inside a request worker thread; on Windows that late import has crashed the whole server process
+# with an access violation (seen as "Bad Gateway" in the UI during the first analysis).
+if not os.environ.get("RESUMEX_NO_PRELOAD"):
+    try:
+        import pyarrow  # noqa: F401
+        import pyarrow.dataset  # noqa: F401
+    except Exception:  # pyarrow is optional; without it there is nothing to preload
+        pass
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,7 +23,10 @@ import logging
 
 from backend.config import settings
 from backend.database import init_db
-from backend.api import resume, jd, analysis, jobs, knowledge, rewrite, recommendations, export, company, editor
+from backend.api import (
+    resume, jd, analysis, jobs, knowledge, rewrite, recommendations, export, company, editor,
+    ats2, interview, verify, auth,
+)
 from backend.jobs.queue import job_queue
 
 logger = logging.getLogger("uvicorn.error")
@@ -25,11 +40,15 @@ async def lifespan(app: FastAPI):
     settings.upload_dir.mkdir(parents=True, exist_ok=True)
 
     # Start background job worker
+    from backend.jobs.handlers import register_handlers
+    register_handlers(job_queue)
     worker_task = asyncio.create_task(job_queue.run_worker())
 
     yield
 
     # Shutdown
+    from backend.llm.router import close_router
+    await close_router()
     job_queue.stop()
     worker_task.cancel()
     try:
@@ -69,6 +88,10 @@ app.include_router(recommendations.router)
 app.include_router(export.router)
 app.include_router(company.router)
 app.include_router(editor.router)
+app.include_router(ats2.router)
+app.include_router(interview.router)
+app.include_router(verify.router)
+app.include_router(auth.router)
 
 
 @app.exception_handler(Exception)
@@ -118,6 +141,13 @@ async def health():
             "device": settings.embedding_device,
         },
     }
+
+
+@app.get("/health/llm", tags=["health"])
+async def llm_health():
+    """Which tiers are configured, and whether their models are pulled in Ollama."""
+    from backend.llm.router import get_router
+    return await get_router().status()
 
 
 @app.get("/health/embeddings", tags=["health"])

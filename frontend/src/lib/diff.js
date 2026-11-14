@@ -29,10 +29,26 @@ export function wordDiff(a = '', b = '') {
   return out;
 }
 
-/** Apply accepted statement edits to a copy of resume_data so exports include them. */
-export function applyEdits(resumeData, statementsById, edits) {
+/**
+ * Apply accepted edits to a copy of resume_data so exports include them.
+ * Keys are statement ids (replace the bullet) or "add:<entryId>:<n>" (append a bullet
+ * to that entry, using any existing statement's path to find the bullets array).
+ */
+export function applyEdits(resumeData, statementsById, edits, entriesById = {}) {
   const data = JSON.parse(JSON.stringify(resumeData || {}));
+  const walk = (path) => {
+    let node = data;
+    for (const k of path) { if (node == null) return null; node = node[k]; }
+    return node;
+  };
   for (const [sid, edit] of Object.entries(edits)) {
+    if (sid.startsWith('add:')) {
+      const entry = entriesById[edit.entryId];
+      const sample = entry?.statements?.find(s => (s.path || []).length >= 2);
+      const parent = sample ? walk(sample.path.slice(0, -1)) : null;
+      if (Array.isArray(parent)) parent.push(edit.text);
+      continue;
+    }
     const ref = statementsById[sid];
     if (!ref) continue;
     const path = ref.statement.path || [];
@@ -41,12 +57,8 @@ export function applyEdits(resumeData, statementsById, edits) {
       continue;
     }
     if (path.length < 2) continue;
-    let node = data;
-    for (let k = 0; k < path.length - 1; k++) {
-      if (node == null) break;
-      node = node[path[k]];
-    }
-    if (node && Array.isArray(node)) node[path[path.length - 1]] = edit.text;
+    const parent = walk(path.slice(0, -1));
+    if (parent && Array.isArray(parent)) parent[path[path.length - 1]] = edit.text;
   }
   return data;
 }

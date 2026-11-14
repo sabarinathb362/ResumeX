@@ -178,4 +178,5 @@ class AnalysisResponse(BaseModel):
     readability_score: Optional[float] = None  # Legacy — use readability_result
     insights: list[Finding] = Field(default_factory=list)
     ai_match_percentage: Optional[float] = None
+    versions: dict = Field(default_factory=dict)   # rubric versions + which models took part
     created_at: Optional[str] = None

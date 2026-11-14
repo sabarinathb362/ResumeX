@@ -26,6 +26,7 @@ def _lines_with(resume: ResumeData, pattern: str, roles=None) -> list[str]:
 def _ats_to_findings(resume: ResumeData, ats: ATSResult) -> list[Finding]:
     out: list[Finding] = []
     contact_ids = [l.id for l in resume.lines if l.role == "contact"]
+    contact_text = " ".join(l.text for l in resume.lines if l.role == "contact")
     n = 0
     for cat in ats.category_scores:
         lost = round(cat.max_score - cat.score, 1)
@@ -37,14 +38,35 @@ def _ats_to_findings(resume: ResumeData, ats: ATSResult) -> list[Finding]:
                         severity=cat.severity if cat.severity != Severity.INFO else Severity.LOW)
             low = msg.lower()
             if "phone number not found" in low:
-                f.title = "No phone number"
-                f.detail = ("Your header has email and profile links but no phone number. Many recruiters "
-                            "(especially campus and Indian hiring teams) shortlist by calling, and some ATS "
-                            "forms treat phone as a required field.")
-                f.fix = "Add a phone number with country code to the contact line, e.g. +91 XXXXX XXXXX."
+                f.title = "No phone number in the header"
+                f.detail = ("Many recruiters shortlist by phone, and some application systems treat it as a required field."
+                            + _placeholder_note(contact_text, r"phone(?: number)?|mobile"))
+                f.fix = "Add a phone number with its country code to the contact line."
                 f.line_ids, f.action, f.severity = contact_ids, "add", Severity.HIGH
-            elif "email address not found" in low or "name not detected" in low:
+            elif "email address not found" in low:
+                f.title = "No email address in the header"
+                f.detail = ("Email is how recruiters and applicant tracking systems reply; an application without "
+                            "one usually cannot be progressed." + _placeholder_note(contact_text, r"e-?mail(?: address)?"))
+                f.fix = "Add a personal, professional email address to the contact line."
                 f.line_ids, f.action, f.severity = contact_ids, "add", Severity.CRITICAL
+            elif "name not detected" in low:
+                f.title = "No name found at the top of the resume"
+                f.detail = "Parsers take the candidate's name from the first line. If it is inside an image or header box, it is lost."
+                f.fix = "Put your name as plain text on the first line."
+                f.line_ids, f.action, f.severity = contact_ids, "add", Severity.CRITICAL
+            elif "no skills detected" in low or (low.startswith("missing essential sections") and "skills" in low):
+                rest = [x.strip() for x in msg.split(":", 1)[1].split(",") if x.strip() != "skills"] if ":" in msg else []
+                f.title = "No Skills section" + (f" (also missing: {', '.join(rest)})" if rest else "")
+                f.detail = ("Applicant tracking systems match a job's required skills against a Skills section first. "
+                            "Without one, a match depends on the parser finding each skill inside a sentence.")
+                f.fix = "Add a Skills section listing the tools, methods and domain skills you have actually used."
+                f.action = "add"
+            elif low.startswith("missing essential sections"):
+                names = msg.split(":", 1)[1].strip() if ":" in msg else ""
+                f.title = f"Missing section: {names}"
+                f.detail = "Parsers and reviewers both look for these standard sections by name."
+                f.fix = f"Add a clearly labelled section for: {names}."
+                f.action = "add"
             elif low.startswith("duplicate sections"):
                 kinds = re.findall(r"'(\w+)'", msg)
                 secs = [s for s in resume.doc_sections if s.kind in kinds]
@@ -73,10 +95,15 @@ def _ats_to_findings(resume: ResumeData, ats: ATSResult) -> list[Finding]:
                 f.severity = Severity.HIGH
             elif low.startswith("future date"):
                 f.severity = Severity.HIGH
-            if not f.detail:
-                f.detail = msg
+            f.points = round(f.points, 1)
             out.append(f)
     return out
+
+
+def _placeholder_note(contact_text: str, pattern: str) -> str:
+    """If the header still holds template text such as 'Phone Number' or 'E-mail', say so."""
+    m = re.search(rf"\b({pattern})\b", contact_text, re.I)
+    return f' The header contains the template text "{m.group(1)}" where the real value should be.' if m else ""
 
 
 def _quality_checks(resume: ResumeData) -> list[Finding]:
@@ -101,13 +128,16 @@ def build_insights(resume: ResumeData, ats: ATSResult, rri: ReadabilityResult | 
     items = _ats_to_findings(resume, ats) + _quality_checks(resume)
     if rri:
         items += rri.findings
-    # dedupe by (title) and drop pure-info items
+    # dedupe by title (two ATS rules can report the same gap, e.g. a missing Skills section);
+    # sorting first keeps the more severe / higher-value copy
+    items.sort(key=lambda f: (-_SEV[f.severity], -f.points))
     seen, out = set(), []
     for f in items:
-        key = f.title.lower()
+        key = re.sub(r"\s*\(also missing.*\)$", "", f.title.lower())
         if key in seen:
             continue
         seen.add(key)
+        f.points = round(f.points, 1)
         out.append(f)
     out.sort(key=lambda f: (-_SEV[f.severity], -f.points))
     return out
