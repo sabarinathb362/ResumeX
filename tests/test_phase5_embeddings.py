@@ -279,8 +279,14 @@ class TestEmbeddingModel:
             "Python developer with machine learning experience",
             "Fresh organic strawberries on sale at the farmers market",
         )
+        related = embeddings.document_similarity(
+            "Python developer with machine learning experience",
+            "Looking for a Python ML engineer",
+        )
         assert sim is not None
-        assert sim < 0.5  # Unrelated texts should have low similarity
+        # Fine-tuned encoders compress cosines into a high band, so compare against a related pair
+        # instead of a fixed cut-off.
+        assert sim < related - 0.1
 
     def test_skill_similarity(self):
         from backend.nlp import embeddings

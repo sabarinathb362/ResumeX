@@ -136,6 +136,9 @@ def main():
     ap.add_argument("--n", type=int, default=300, help="rows to sample from the test split (0 = all)")
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--ablate", action="store_true", help="also run without embeddings and embedding-only")
+    ap.add_argument("--test-file", help="jsonl test split to use instead of the HF test split "
+                                        "(e.g. training/data/clean_split/test.jsonl from train_encoder_clean.py)")
+    ap.add_argument("--tag", default="", help="suffix for the output files, e.g. _clean_v2")
     args = ap.parse_args()
 
     from datasets import load_dataset
@@ -146,7 +149,12 @@ def main():
     from backend.matching.hybrid import run_hybrid_matching
     from backend.nlp import embeddings
 
-    ds = load_dataset("cnamuangtoun/resume-job-description-fit", split="test")
+    if args.test_file:
+        from datasets import Dataset
+        recs = [json.loads(l) for l in open(args.test_file, encoding="utf-8")]
+        ds = Dataset.from_list(recs)
+    else:
+        ds = load_dataset("cnamuangtoun/resume-job-description-fit", split="test")
     idx = list(range(len(ds)))
     if args.n:
         # stratified sample so every label is represented
@@ -216,8 +224,8 @@ def main():
         results["rri_mean"] = round(st.mean(r["rri"] for r in rows), 2)
         results["parse_failures_no_sections"] = sum(1 for r in rows if r["sections"] == 0)
 
-    (OUT / "hf_fit_results.json").write_text(json.dumps(results, indent=2))
-    with open(OUT / "hf_fit_rows.csv", "w", newline="", encoding="utf8") as f:
+    (OUT / f"hf_fit_results{args.tag}.json").write_text(json.dumps(results, indent=2))
+    with open(OUT / f"hf_fit_rows{args.tag}.csv", "w", newline="", encoding="utf8") as f:
         w = csv.DictWriter(f, fieldnames=list(rows[0]))
         w.writeheader(); w.writerows(rows)
     print(json.dumps(results, indent=2))

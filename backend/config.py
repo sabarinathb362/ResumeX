@@ -59,9 +59,9 @@ class Settings(BaseSettings):
     match_weight_education: int = 5
     match_weight_semantic_relevance: int = 55
     # Cosine -> [0, 1] calibration for the semantic dimension (5th / 95th percentile of whole-document
-    # cosine on 400 training-split pairs with bge-small-resumex). Re-derive if the encoder changes.
-    match_semantic_cos_low: float = 0.55
-    match_semantic_cos_high: float = 0.88
+    # cosine on 400 clean-train pairs with bge-small-resumex-v2). Re-derive if the encoder changes.
+    match_semantic_cos_low: float = 0.558
+    match_semantic_cos_high: float = 0.891
     match_semantic_doc_share: float = 0.6   # rest = per-requirement coverage
 
     # ── LLM settings (Phase 7+) ─────────────────────────────────
@@ -93,7 +93,7 @@ class Settings(BaseSettings):
     # ── Embedding settings (Phase 5+) ────────────────────────────
     # Resolved against the repo root, then backend/ (see nlp/embeddings.py), so both
     # models/bge-small-resumex (trainer output) and backend/models/bge-small-resumex work.
-    embedding_model: str = "models/bge-small-resumex"
+    embedding_model: str = "models/bge-small-resumex-v2"   # resume-disjoint retrain; v1 = models/bge-small-resumex
     embedding_fallback_model: str = "BAAI/bge-small-en-v1.5"
     embedding_device: str = "auto"  # "auto" | "cuda" | "cpu"
 

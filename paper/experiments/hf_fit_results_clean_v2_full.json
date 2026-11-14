@@ -1,0 +1,134 @@
+{
+  "dataset": "cnamuangtoun/resume-job-description-fit (test)",
+  "rows": 800,
+  "unique_resumes": 62,
+  "seconds": 743.1,
+  "variants": [
+    {
+      "variant": "ResumeX full match score",
+      "n": 800,
+      "spearman": 0.4064,
+      "pearson": 0.4203,
+      "auc_good_vs_no": 0.767,
+      "auc_fit_vs_no": 0.7229,
+      "mean_by_label": {
+        "0.0": 42.75,
+        "0.5": 52.63,
+        "1.0": 57.12
+      }
+    },
+    {
+      "variant": "  dimension only: Required Skills",
+      "n": 800,
+      "spearman": 0.0755,
+      "pearson": 0.0839,
+      "auc_good_vs_no": 0.5571,
+      "auc_fit_vs_no": 0.5257,
+      "mean_by_label": {
+        "0.0": 4.68,
+        "0.5": 4.49,
+        "1.0": 6.06
+      }
+    },
+    {
+      "variant": "  dimension only: Preferred Skills",
+      "n": 800,
+      "spearman": 0.0874,
+      "pearson": 0.0985,
+      "auc_good_vs_no": 0.546,
+      "auc_fit_vs_no": 0.5228,
+      "mean_by_label": {
+        "0.0": 0.41,
+        "0.5": 0.41,
+        "1.0": 0.69
+      }
+    },
+    {
+      "variant": "  dimension only: Relevant Experience",
+      "n": 800,
+      "spearman": 0.0341,
+      "pearson": 0.0573,
+      "auc_good_vs_no": 0.5074,
+      "auc_fit_vs_no": 0.5325,
+      "mean_by_label": {
+        "0.0": 1.04,
+        "0.5": 1.23,
+        "1.0": 1.11
+      }
+    },
+    {
+      "variant": "  dimension only: Relevant Projects",
+      "n": 800,
+      "note": "constant score, correlation undefined",
+      "mean": 0.0
+    },
+    {
+      "variant": "  dimension only: Responsibilities Alignment",
+      "n": 800,
+      "spearman": 0.024,
+      "pearson": 0.0604,
+      "auc_good_vs_no": 0.5059,
+      "auc_fit_vs_no": 0.5194,
+      "mean_by_label": {
+        "0.0": 1.19,
+        "0.5": 1.5,
+        "1.0": 1.42
+      }
+    },
+    {
+      "variant": "  dimension only: Education Alignment",
+      "n": 800,
+      "spearman": 0.0438,
+      "pearson": 0.0445,
+      "auc_good_vs_no": 0.5087,
+      "auc_fit_vs_no": 0.5047,
+      "mean_by_label": {
+        "0.0": 0.06,
+        "0.5": 0.08,
+        "1.0": 0.11
+      }
+    },
+    {
+      "variant": "  dimension only: Semantic/Domain Relevance",
+      "n": 800,
+      "spearman": 0.4835,
+      "pearson": 0.4721,
+      "auc_good_vs_no": 0.8213,
+      "auc_fit_vs_no": 0.7543,
+      "mean_by_label": {
+        "0.0": 28.75,
+        "0.5": 36.36,
+        "1.0": 40.58
+      }
+    },
+    {
+      "variant": "Ablation: no embeddings (rules + aliases only)",
+      "n": 800,
+      "spearman": 0.0676,
+      "pearson": 0.0988,
+      "auc_good_vs_no": 0.555,
+      "auc_fit_vs_no": 0.5285,
+      "mean_by_label": {
+        "0.0": 25.85,
+        "0.5": 26.86,
+        "1.0": 28.6
+      }
+    },
+    {
+      "variant": "Ablation: embedding cosine only",
+      "n": 800,
+      "spearman": 0.5051,
+      "pearson": 0.4811,
+      "auc_good_vs_no": 0.8409,
+      "auc_fit_vs_no": 0.7611,
+      "mean_by_label": {
+        "0.0": 0.74,
+        "0.5": 0.81,
+        "1.0": 0.85
+      }
+    }
+  ],
+  "ats_mean": 88.26,
+  "rri_mean": 51.83,
+  "parse_failures_no_sections": 0
+}
