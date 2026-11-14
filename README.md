@@ -1,22 +1,43 @@
-# ResumeIQ v2.0
+# ResumeX
 
-**Privacy-preserving, local-first resume analysis engine.**
+**Local-first resume analysis with explainable scoring, RAG and embedding-based job matching.**
 
-ATS compatibility scoring, hybrid job matching with skill taxonomy, and evidence-grounded feedback — all running entirely on your machine. No data ever leaves your device.
+ResumeX checks a resume on two separate axes, whether software can parse it (ATS compatibility) and whether a person can understand it in a quick skim (Recruiter Readability Index), and matches it against a job description with a fine-tuned embedding model. Every score is computed by versioned, deterministic rules. Local language models (through Ollama) only propose labels and rewrites, and every rewrite must pass a fact-checker that rejects numbers, tools or claims not present in the resume.
 
-## Quick Start
+Everything runs on your machine. Network features (company lookup, GitHub check) are off by default.
 
-### 1. Backend (FastAPI + Python)
+## Features
+
+| Area | What it does |
+|------|--------------|
+| **Parsing** | Layout-aware PDF parser (PyMuPDF) that builds sections → entries → statements with line ids; DOCX, LaTeX (`.tex`) and Typst (`.typ`) inputs |
+| **ATS compatibility** | 9 rules, 100 points: text extractability, section structure, formatting safety, contact info, headings, dates, skill visibility, links, parsing risk |
+| **Recruiter Readability Index** | 7 dimensions, 100 points, plus an A–D grade for every bullet (action verb, specifics, outcome, metric) |
+| **ATS 2.0** | Simulated 7-second skim over the real page layout, Verifiable Impact Quotient, and "what a naive parser sees" views |
+| **Job matching** | 7-dimension fit score: exact, alias (168 aliases) and taxonomy skill matching plus semantic similarity from a fine-tuned `bge-small` encoder |
+| **RAG** | Hybrid retriever (0.65 dense + 0.35 BM25) over role norms, skill relationships, writing guidance and project archetypes, with cited chunk ids |
+| **Grounded rewrites** | Fact-checker compares numbers by value and entities through an alias/hypernym taxonomy; rejected drafts are shown with reasons |
+| **Editor** | Edit text directly on your own PDF (layout, fonts and spacing kept), apply all ready suggestions at once, export in your original layout or as DOCX / LaTeX / TXT |
+| **Mock interview** | 3 rounds of questions grounded in your resume, the JD and company signals; STAR grading with verbatim-quote checks, score computed in code |
+| **Integrity** | Hidden-text detection (invisible, white, tiny, off-page text), timeline consistency, optional GitHub claim check |
+| **Accounts (optional)** | Sign up to keep a history of analysed resumes; not needed to use the app |
+
+## Quick start
+
+### Requirements
+
+- Python 3.11+ (developed on 3.13)
+- Node.js 20+
+- Optional: [Ollama](https://ollama.com) for model reviews, rewrites and the interview; without it, every feature falls back to its rule-based path
+
+### 1. Backend
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Run the backend server
-python -m uvicorn backend.main:app --reload --port 8000
+python -m uvicorn backend.main:app --port 8000
 ```
 
-### 2. Frontend (React + Vite)
+### 2. Frontend
 
 ```bash
 cd frontend
@@ -24,98 +45,96 @@ npm install
 npm run dev
 ```
 
-Then open **http://localhost:5173** in your browser.
+Open **http://localhost:5173**.
 
-### 3. Run Tests
+### 3. Local LLMs (optional)
+
+```bash
+ollama pull qwen3:4b-instruct-2507-q4_K_M
+ollama pull qwen2.5:7b-instruct-q4_K_M
+```
+
+The 4B model serves the editor (fast tier); the 7B model runs background reviews (deep tier). Both fit together in 8 GB of VRAM.
+
+### 4. Embedding model
+
+The fine-tuned encoder (`bge-small-resumex`, ~130 MB) is not in the repository. Place it at `backend/models/bge-small-resumex/` or `models/bge-small-resumex/`. If it is missing, ResumeX falls back to `BAAI/bge-small-en-v1.5`, downloaded automatically by sentence-transformers.
+
+### 5. Tests
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-## Architecture
+## Configuration
 
-```
-resumeiq/
-├── backend/
-│   ├── main.py              # FastAPI app entry point
-│   ├── config.py             # All tunable settings (weights, limits, etc.)
-│   ├── database.py           # SQLite / SQLAlchemy setup
-│   ├── api/                  # REST API routes
-│   │   ├── resume.py         # POST /api/resume/upload
-│   │   ├── jd.py             # POST /api/jd/analyze
-│   │   ├── analysis.py       # POST /api/analysis/run, GET /api/analysis/{id}
-│   │   └── jobs.py           # SSE progress streaming
-│   ├── ingestion/            # PDF & DOCX extraction (Phase 1)
-│   │   ├── pdf.py            # PyMuPDF extraction with layout metadata
-│   │   └── docx_extractor.py # python-docx extraction
-│   ├── ats/                  # Deterministic ATS rule engine (Phase 2)
-│   │   └── rules.py          # 9 weighted scoring dimensions
-│   ├── parsing/              # JD parsing (Phase 3)
-│   │   └── jd_parser.py      # Requirement classification
-│   ├── nlp/                  # Skill normalization (Phase 3)
-│   │   └── skills.py         # 150+ aliases, taxonomy, match classification
-│   ├── matching/             # Hybrid matching (Phase 4)
-│   │   └── hybrid.py         # 7 match dimensions with evidence tracing
-│   ├── schemas/              # Pydantic data models
-│   ├── models/               # SQLAlchemy ORM models
-│   └── jobs/                 # Background job queue (Phase 0)
-├── frontend/
-│   └── src/
-│       ├── App.jsx           # Main dashboard UI
-│       ├── api/client.js     # Backend API client
-│       └── components/       # ScoreCircle, WarningList, SkillMatchList, FileUpload
-├── tests/
-│   └── test_smoke.py         # 16 smoke tests (all passing)
-├── knowledge_base/           # RAG corpus (Phase 6)
-└── requirements.txt
+All weights, thresholds and model names are in `backend/config.py` and can be overridden with environment variables prefixed `RESUMEIQ_` or a `.env` file, for example:
+
+```bash
+RESUMEIQ_LLM_MODEL=qwen2.5:7b-instruct-q4_K_M
+RESUMEIQ_COMPANY_WEB_LOOKUP=true
+RESUMEIQ_GITHUB_VERIFY_ENABLED=true
 ```
 
-## Project Status & Implementation Phases
+## Project structure
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| Phase 0 | Repository scaffold, CI, job queue, SSE | ✅ Done |
-| Phase 1 | PDF/DOCX ingestion with layout metadata | ✅ Done |
-| Phase 2 | ATS rule engine (9 dimensions) + dashboard | ✅ Done |
-| Phase 3 | JD parsing + skill normalization (150+ aliases) | ✅ Done |
-| Phase 4 | Hybrid semantic matching (7 dimensions) | ✅ Done |
-| Phase 5 | Real embedding matching (BGE-small, sentence-transformers) | ✅ Done |
-| Phase 6 | RAG Knowledge Base & Hybrid Retrieval (BM25 + Dense) | ✅ Done |
-| Phase 7 | Local LLM Integration (Ollama / GBNF / Delimited Prompts) | ✅ Done |
-| Phase 8 | Grounded Feedback & Factual Bullet Rewriting (XYZ Formula) | ✅ Done |
-| Phase 9 | AI-Likeness, Generic Writing & Placeholder / Lorem Ipsum Detector | ✅ Done |
-| Phase 10 | Readability Scoring (RRI, 6 dimensions, 100-pt rubric) | ✅ Done |
-| Phase 11 | General Recommendation Engine (No JD Provided) | ✅ Done |
-| Phase 12 | JD-Based Feedback & AI Match Percentage (Judge + Uplift) | ✅ Done |
-| Phase 13 | Skill-Gap Analysis & Project Recommendation Engine | ✅ Done |
-| Phase 14 | LaTeX / Overleaf Source Parser & Layout Risk Detection | ✅ Done |
-| Phase 15 | Evaluation Benchmark & Ablation Suite | ✅ Done |
-| Phase 16 | UI Polish, Interactive Rewriter, Project Cards, Export & Privacy Controls | ✅ Done |
+```
+backend/
+  main.py               FastAPI app
+  config.py             all tunable settings
+  api/                  REST routes: resume, jd, analysis, ats2, editor, export, interview,
+                        verify, recommendations, rewrite, knowledge, company, jobs, auth
+  ingestion/            PDF (layout parser), DOCX, LaTeX and Typst ingestion
+  ats/                  ATS rule engine
+  readability/          Recruiter Readability Index and bullet grading
+  ats2/                 skim simulation, impact quotient, naive-parser views
+  matching/             hybrid job matching
+  nlp/                  embeddings, skills, placeholder and generic-writing detection
+  rag/                  hybrid retriever and RAG pipeline
+  llm/                  Ollama client and tiered router
+  feedback/             grounded suggestions, rewriter, fact-checker, skill taxonomy
+  editor/               in-place PDF editing
+  interview/            question plan and STAR grading
+  integrity/            hidden text, timeline, GitHub check
+  recommendations/      general, JD-based and project recommendations
+  jobs/                 background job queue with SSE progress
+  models/               SQLAlchemy models (+ the fine-tuned encoder, not committed)
+frontend/src/
+  App.jsx               upload, dashboard, accounts and history
+  components/           editor, ATS 2.0 panel, interview, integrity, recommendations ...
+knowledge_base/         RAG corpus (role norms, skills, guidance, project archetypes)
+training/               data building, QLoRA fine-tuning and evaluation scripts
+paper/                  experiments and figures for the research paper
+tests/                  pytest suite
+```
 
-## API Endpoints
+## Main API endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/api/resume/upload` | POST | Upload and parse resume (PDF, DOCX, LaTeX `.tex`) |
-| `/api/jd/analyze` | POST | Parse job description (text or file) |
-| `/api/analysis/run` | POST | Run ATS + match + readability analysis |
-| `/api/analysis/{id}` | GET | Get full analysis results |
-| `/api/analysis/{id}/ats` | GET | Get ATS results only |
-| `/api/analysis/{id}/match` | GET | Get match results only |
-| `/api/analysis/{id}/readability` | GET | Get readability results only |
-| `/api/knowledge/search` | GET | Hybrid RAG search over role norms, skills, and projects |
-| `/api/rewrite` | POST | Factually validated bullet rewriter with Google XYZ formula |
-| `/api/recommendations/general` | POST | Inferred role & prioritized resume recommendations |
-| `/api/recommendations/jd` | POST | AI Match % evaluation, per-requirement judge, and section uplift |
-| `/api/projects/recommend` | POST | Recommended project archetypes addressing candidate skill gaps |
-| `/api/jobs/{id}/events` | GET | SSE progress stream |
-| `/health` | GET | Health check (includes embedding & LLM status) |
-| `/health/embeddings` | GET | Embedding model availability |
+| `/api/resume/upload` | POST | Upload and parse a resume |
+| `/api/jd/analyze` | POST | Parse a job description |
+| `/api/analysis/run` | POST | ATS, readability and (with a JD) match scores |
+| `/api/analysis/{id}/deep` | POST | Start the LLM review as a background job (SSE progress) |
+| `/api/ats2/{resume_id}` | GET | Skim simulation, impact quotient and parser views |
+| `/api/editor/{resume_id}/units` | GET | Editable text runs of the original PDF |
+| `/api/editor/{resume_id}/layout/export` | POST | Download your PDF with edits applied in place |
+| `/api/export/{docx,latex,pdf,txt}` | POST | Re-typeset exports |
+| `/api/interview/generate` | POST | Build a 3-round interview plan |
+| `/api/interview/evaluate` | POST | Grade one answer (STAR) |
+| `/api/verify/{resume_id}` | GET | Hidden text and timeline checks |
+| `/api/knowledge/search` | GET | Hybrid RAG search |
+| `/api/auth/{signup,login,history}` | POST/GET | Optional accounts and analysis history |
+| `/health` | GET | Health check, including embedding and LLM status |
 
-## Tech Stack
+Full interactive docs: **http://localhost:8000/docs**
 
-- **Backend**: Python 3.13, FastAPI, SQLAlchemy, SQLite
-- **Parsers**: PyMuPDF (PDF), python-docx (DOCX)
-- **Embeddings**: sentence-transformers (BGE-small-en-v1.5), CUDA-accelerated
-- **Frontend**: React 19, Vite 8
-- **Target Hardware**: i7 / RTX 4060 8GB / 24GB RAM
+## Tech stack
+
+- **Backend:** Python, FastAPI, SQLAlchemy, SQLite, PyMuPDF, python-docx, sentence-transformers
+- **Models:** fine-tuned `bge-small-en-v1.5` (CoSENT, 6,363 resume–JD pairs); Qwen3-4B and Qwen2.5-7B through Ollama
+- **Frontend:** React 19, Vite, Tiptap, Motion, GSAP, three.js, Lenis
+
+## Notes
+
+Scores come from ResumeX's own published rubrics. They are not industry standards, do not reproduce any specific ATS vendor, and do not predict hiring outcomes.
