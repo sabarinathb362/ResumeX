@@ -132,7 +132,7 @@ def _score_required_skills(matches: list[SkillMatch], jd: JDData) -> MatchDimens
     required = set(s.lower() for s in jd.required_skills)
     if not required:
         return MatchDimensionScore(
-            dimension="Required Skills", score=max_score, max_score=max_score,
+            dimension="Required Skills", score=0, max_score=0,  # not applicable: excluded, the rest is rescaled
             details=["No required skills specified in JD"],
         )
 
@@ -163,7 +163,7 @@ def _score_preferred_skills(matches: list[SkillMatch], jd: JDData) -> MatchDimen
     preferred = set(s.lower() for s in jd.preferred_skills)
     if not preferred:
         return MatchDimensionScore(
-            dimension="Preferred Skills", score=max_score, max_score=max_score,
+            dimension="Preferred Skills", score=0, max_score=0,  # not applicable: excluded, the rest is rescaled
             details=["No preferred skills specified"],
         )
 
@@ -266,7 +266,7 @@ def _score_responsibilities(resume: ResumeData, jd: JDData) -> MatchDimensionSco
 
     if not jd.responsibilities:
         return MatchDimensionScore(
-            dimension="Responsibilities Alignment", score=max_score, max_score=max_score,
+            dimension="Responsibilities Alignment", score=0, max_score=0,  # not applicable: excluded, the rest is rescaled
             details=["No responsibilities specified in JD"],
         )
 
@@ -302,7 +302,7 @@ def _score_education(resume: ResumeData, jd: JDData) -> MatchDimensionScore:
 
     if not jd.education_requirements:
         return MatchDimensionScore(
-            dimension="Education Alignment", score=max_score, max_score=max_score,
+            dimension="Education Alignment", score=0, max_score=0,  # not applicable: excluded, the rest is rescaled
             details=["No education requirements specified"],
         )
 
@@ -349,41 +349,43 @@ def _score_semantic_relevance(resume: ResumeData, jd: JDData) -> MatchDimensionS
 
     if not jd.raw_text.strip():
         return MatchDimensionScore(
-            dimension="Semantic/Domain Relevance", score=max_score, max_score=max_score,
+            dimension="Semantic/Domain Relevance", score=0, max_score=0,  # not applicable: excluded, the rest is rescaled
             details=["No JD text to compare"],
         )
 
     # ── Try embedding-based similarity first ─────────────────────
-    doc_sim = embeddings.document_similarity(resume.raw_text, jd.raw_text)
+    # Whole-document cosine, on the same first-350-words view the encoder was fine-tuned on.
+    doc_sim = None
+    vecs = embeddings.encode([_head(resume.raw_text), _head(jd.raw_text)])
+    if vecs is not None:
+        doc_sim = embeddings.cosine_similarity(vecs[0], vecs[1])
 
     if doc_sim is not None:
-        # doc_sim is in [-1, 1] for normalised vectors; for BGE it's
-        # typically in [0, 1] since texts are always positive-ish.
-        # Map the useful range [0.3, 0.85] → [0, 1] for scoring.
-        normalized = max(0.0, min((doc_sim - 0.3) / 0.55, 1.0))
-        score = max_score * normalized
+        lo, hi = settings.match_semantic_cos_low, settings.match_semantic_cos_high
+        cal = lambda c: max(0.0, min((c - lo) / (hi - lo), 1.0))
+        doc_part = cal(doc_sim)
 
-        details = [
-            f"Embedding similarity: {doc_sim:.1%} (BGE-small-en-v1.5)",
-        ]
+        details = [f"Embedding similarity, whole document: {doc_sim:.1%} ({settings.embedding_model.rstrip('/').split('/')[-1]})"]
 
-        # Add chunk-level highlights for richer feedback
-        resume_chunks = _extract_chunks(resume)
+        # Per-requirement coverage: for each JD requirement, the closest resume passage.
+        resume_chunks = _extract_chunks(resume) or embeddings._chunk_words(resume.raw_text, 60, 15)
         jd_chunks = _extract_jd_chunks(jd)
-
+        req_part = None
         if resume_chunks and jd_chunks:
-            chunk_matches = embeddings.chunk_similarities(
-                jd_chunks[:10],   # Top 10 JD requirements
-                resume_chunks[:30],  # Top 30 resume bullets
-                top_k=1,
-            )
+            chunk_matches = embeddings.chunk_similarities(jd_chunks[:15], resume_chunks[:40], top_k=1)
             if chunk_matches:
-                top_pairs = chunk_matches[:3]
-                for pair in top_pairs:
+                req_part = sum(cal(p["similarity"]) for p in chunk_matches) / len(chunk_matches)
+                covered = sum(1 for p in chunk_matches if cal(p["similarity"]) >= 0.5)
+                details.append(f"Requirements with a close passage in the resume: {covered} of {len(chunk_matches)}")
+                for pair in chunk_matches[:3]:
                     details.append(
                         f"JD→Resume match ({pair['similarity']:.0%}): "
                         f'"{pair["query_text"]}..." ↔ "{pair["corpus_text"]}..."'
                     )
+
+        share = settings.match_semantic_doc_share
+        normalized = doc_part if req_part is None else share * doc_part + (1 - share) * req_part
+        score = max_score * normalized
 
         return MatchDimensionScore(
             dimension="Semantic/Domain Relevance",
@@ -406,6 +408,10 @@ def _score_semantic_relevance(resume: ResumeData, jd: JDData) -> MatchDimensionS
         max_score=max_score,
         details=[f"Word overlap: {len(overlap)} shared terms (embedding model unavailable)"],
     )
+
+
+def _head(text: str, words: int = 350) -> str:
+    return " ".join((text or "").split()[:words])
 
 
 def _extract_chunks(resume: ResumeData) -> list[str]:
@@ -457,8 +463,11 @@ def run_hybrid_matching(resume: ResumeData, jd: JDData) -> HybridMatchResult:
         _score_semantic_relevance(resume, jd),
     ]
 
-    overall = sum(d.score for d in dimension_scores)
-    max_possible = sum(d.max_score for d in dimension_scores)
+    # Dimensions the JD gives nothing for (max_score 0) are left out and the rest rescaled to 100,
+    # so a sparse or badly parsed JD no longer hands out free points.
+    applicable = sum(d.max_score for d in dimension_scores)
+    max_possible = 100.0
+    overall = 100.0 * sum(d.score for d in dimension_scores) / applicable if applicable else 0.0
 
     # Classify skills
     matched = [m.jd_skill for m in skill_matches if m.match_type == SkillMatchType.DIRECT]

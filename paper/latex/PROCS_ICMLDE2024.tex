@@ -1,0 +1,336 @@
+% ResumeX paper, prepared in the Procedia Computer Science (ICMLDE 2024) CRC template.
+% Compile with pdfLaTeX (Overleaf: set the compiler to pdfLaTeX). Figures are in figures/.
+
+\documentclass[3p,times,procedia]{elsarticle}
+\flushbottom
+
+\usepackage{ecrc}
+\usepackage[bookmarks=false]{hyperref}
+    \hypersetup{colorlinks,
+      linkcolor=blue,
+      citecolor=blue,
+      urlcolor=blue}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[figuresright]{rotating}
+
+\volume{00}
+\firstpage{1}
+\journalname{Procedia Computer Science}
+\runauth{Sabarinath B et al.}
+\jid{procs}
+
+\graphicspath{{figures/}}
+
+\begin{document}
+\begin{frontmatter}
+
+\dochead{International Conference on Machine Learning and Data Engineering}
+
+\title{ResumeX: Hybrid Retrieval-Augmented Generation and Fine-Tuned Embedding-Based Job Matching for Grounded, Explainable Resume Assessment with Local LLMs}
+
+\author{Sabarinath B\corref{cor1}}
+\author{Arjun Ajay}
+\author{Nishtha Jain}
+
+\address{School of Computing, Amrita Vishwa Vidyapeetham, Amritapuri Campus, Kollam, Kerala, India}
+
+\begin{abstract}
+Resume screening tools usually return a single opaque score, depend on cloud language models, and offer rewrites that may add facts the candidate never stated. We present ResumeX, an open, local-first system that assesses a resume along two separate axes: whether software can parse it (a nine-rule, 100-point ATS compatibility rubric) and whether a human reviewer can understand it in a short skim (a seven-dimension Recruiter Readability Index). All scores are computed by versioned, deterministic rules. Language models running on the user's machine are restricted to producing labels and draft text, and every draft must pass a fact-checker that rejects numbers and named entities not supported by the resume. Semantic job matching uses a BGE-small encoder that we fine-tuned on 6,363 resume and job-description pairs, raising the held-out Spearman correlation with fit labels from 0.369 to 0.695. The system also detects hidden text, simulates naive parsers, runs a grounded mock interview, and edits the user's own PDF in place so that the original template is preserved. On a corpus of 12 resumes, ATS scores were high (mean 93.7) while readability scores were markedly lower (mean 66.2), and only 15\% of 123 bullets contained a quantified result. In controlled tests, the fact-checker rejected all 386 unfaithful rewrites while accepting 98.6\% of faithful ones, and the hidden-text detector found injected text in all 60 manipulated files.
+\end{abstract}
+
+\begin{keyword}
+resume analysis; applicant tracking systems; explainable scoring; sentence embeddings; retrieval-augmented generation; hallucination control; local language models
+\end{keyword}
+\cortext[cor1]{Corresponding author.}
+\end{frontmatter}
+
+\email{am.sc.u4id2037@am.students.amrita.edu (Sabarinath B), am.sc.u4id2003@am.students.amrita.edu (Arjun Ajay), am.sc.u4id2032@am.students.amrita.edu (Nishtha Jain)}
+
+\vspace*{-6pt}
+
+\section{Introduction}
+\label{sec:intro}
+
+Most large employers filter applications through an applicant tracking system (ATS) before a person reads them. Candidates, particularly students applying for their first role, therefore face two separate obstacles. The file must survive automated parsing, and the text that survives must persuade a reviewer who, according to eye-tracking work by the recruitment firm Ladders, spends roughly seven seconds on a first pass \cite{ladders2018}. Tools that help candidates with these obstacles exist, but they share three weaknesses. They tend to report a single score without showing how it was computed. They send the document, which contains contact details and employment history, to a remote service. And when they suggest rewrites through a large language model (LLM), the suggestions can introduce metrics, tools or achievements that are not in the original, a failure mode that is well documented for generative models \cite{ji2023hallucination}. A rewritten bullet claiming a ``40\% reduction in latency'' that the candidate never measured is worse than no suggestion at all, because it exposes the candidate in the interview.
+
+This paper describes ResumeX, a resume assessment system built around one design rule: \emph{scores are computed by fixed, inspectable rules, and models only propose}. A local LLM may label a bullet or draft a rewrite, but it never sets a score, and none of its text reaches the user without passing a deterministic grounding check. The contributions of this work are as follows.
+\begin{itemize}[]
+\item A two-axis assessment that keeps machine readability (ATS compatibility) separate from human readability (the Recruiter Readability Index, RRI), with per-bullet grades and a simulated skim computed from the actual page layout.
+\item A grounding layer for generated text: a fact-checker that compares numbers by value and named entities through a directional alias and hypernym taxonomy, plus a verbatim-quote check for interview grading.
+\item A fine-tuned sentence encoder for resume and job-description matching, combined with alias and taxonomy matching and a hybrid dense and lexical retriever over a curated knowledge base.
+\item Integrity checks that find text a parser reads but a person cannot see, and an in-place PDF editor that applies accepted changes inside the candidate's own layout instead of re-typesetting the document.
+\item An evaluation on a small resume corpus and in controlled manipulation experiments, together with the full code needed to reproduce every figure.
+\end{itemize}
+
+The remainder of the paper is organised as follows. Section~\ref{sec:related} reviews related work. Section~\ref{sec:system} describes the architecture and each component. Section~\ref{sec:setup} describes the experimental setup, Section~\ref{sec:results} reports the results, and Section~\ref{sec:discussion} discusses limitations and ethical considerations before Section~\ref{sec:conclusion} concludes.
+
+\section{Related work}
+\label{sec:related}
+
+\textit{Resume parsing and person-job fit.} Early resume parsers relied on templates and named-entity rules; later work applied pretrained transformers to segment resumes and match them to job descriptions \cite{bhatia2019}. Person-job fit has been framed as joint representation learning over resumes and postings \cite{zhu2018pjfnn,qin2018apjfnn}. These models predict fit from the employer's side and are trained on proprietary hiring records. ResumeX works from the candidate's side: it explains why a document scores as it does and what can be changed, so interpretability matters more than ranking accuracy.
+
+\textit{Sentence embeddings and retrieval.} Siamese transformer encoders such as Sentence-BERT \cite{reimers2019sbert} made semantic similarity cheap enough for interactive use, and the BGE family \cite{xiao2023cpack} provides small, strong English encoders. CoSENT \cite{su2022cosent} trains such encoders directly on graded similarity labels. Retrieval-augmented generation \cite{lewis2020rag} conditions generation on retrieved passages, and combining dense similarity with a lexical score such as BM25 \cite{robertson2009bm25} is a common way to keep rare terms like tool names retrievable.
+
+\textit{Hallucination and grounding.} LLMs produce fluent statements that are unsupported by their input \cite{ji2023hallucination}. In resume rewriting, this risk is direct: the output is a factual claim about a person. Most mitigation work changes the model or the prompt. ResumeX instead places a deterministic verifier after the model and treats any unsupported number or entity as a rejection, which is closer to the constrained-output approach used in safety-critical extraction.
+
+\textit{Fairness and manipulation in automated hiring.} Algorithmic hiring tools raise documented fairness concerns \cite{raghavan2020}, and recent work found demographic bias when LLM-based retrieval ranks resumes \cite{wilson2024}. A separate line of work shows that text hidden from human readers can still steer models that process the document \cite{greshake2023}. In resumes this takes the form of white or microscopic keyword lists aimed at ATS filters. ResumeX does not rank candidates against each other, and it detects hidden text rather than producing it.
+
+\section{System design}
+\label{sec:system}
+
+Figure~\ref{fig:arch} shows the architecture. A FastAPI backend and a React front end run on the user's machine; analysis results are stored in a local SQLite database. Network calls (a company summary lookup and a GitHub repository check) are disabled by default and must be switched on by the user.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=\textwidth]{fig_architecture}}
+\caption{ResumeX architecture. Green blocks are deterministic, amber blocks use learned representations, the red block is the local LLM, and the white block contains the checks every model output must pass.}
+\label{fig:arch}
+\end{figure}
+
+\subsection{Layout-aware ingestion}
+PDF resumes are read with PyMuPDF, which exposes every text span with its font, size, flags and bounding box. A first version of the parser treated any short bold block as a section heading; because names, employers and job titles are usually bold, this split real sections apart and left the experience section empty on many documents. The second version groups spans into lines, estimates the body font size from the median, recognises headings from a vocabulary of section aliases combined with size and position, and builds a three-level structure of sections, entries (one job, project or degree) and statements (one bullet, possibly spanning several lines). Each line keeps a stable identifier, so findings, grades and edits can be drawn on the page image at the exact position they refer to. DOCX, LaTeX and Typst inputs are mapped onto the same structure; for source formats, line identifiers point back to source line numbers.
+
+\subsection{ATS compatibility rubric}
+The ATS score is the sum of nine independent rules with fixed point budgets: text extractability (20), section structure (15), formatting safety (15), contact information (10), standard headings (10), date consistency (10), skill visibility (10), link and contact validity (5) and parsing risk (5). Each rule returns a score, a severity, the evidence it used and a remediation. The weights are configuration values with a version number, so a score can always be traced to a rubric release. Because no vendor publishes its parser, the rubric does not claim to reproduce any specific ATS; it measures properties that are known to cause extraction failures, such as text stored as images, multi-column reading order, icon fonts and non-standard headings.
+
+\subsection{Recruiter Readability Index and bullet grading}
+The RRI asks a different question: in a short skim, does a reader understand who the person is, what they did and why it mattered? It has seven dimensions, with weights in parentheses: first-impression clarity (20), impact and evidence density (20), specificity and concreteness (15), clarity and concision (15), visual hierarchy and scan flow (10), narrative coherence (10) and role-norm alignment (10).
+
+The core of the index is a grade for each statement in an experience, project, leadership or volunteering entry. A statement $s$ is described by four Boolean properties: it opens with an action verb ($a$), it names something checkable such as a tool, product, client or place ($p$), it states an outcome ($o$), and that outcome is quantified ($m$). The grade is
+\begin{equation}
+g(s)=\begin{cases}
+\mathrm{A} & a \wedge p \wedge m\\
+\mathrm{B} & a \wedge \left(m \vee (o \wedge p)\right)\\
+\mathrm{C} & a \wedge (p \vee o)\\
+\mathrm{D} & \text{otherwise,}
+\end{cases}
+\end{equation}
+lowered by one step when the statement contains three or more vague filler phrases. Grades map to values $v(\mathrm{A})=1.0$, $v(\mathrm{B})=0.75$, $v(\mathrm{C})=0.45$ and $v(\mathrm{D})=0.15$, and the evidence-density dimension uses the section-weighted mean
+\begin{equation}
+E=\frac{\sum_{s} w_{k(s)}\, v(g(s))}{\sum_{s} w_{k(s)}},
+\end{equation}
+where $k(s)$ is the section kind and $w$ gives experience 1.6, projects 1.0, leadership 0.6, volunteering 0.4 and extracurricular activities 0.3. The weighting reflects the observation that a weak bullet under a candidate's only internship costs more than one under a hobby. When a local LLM is available, it casts an additional vote on each grade and runs a skim test that asks what role the resume suggests; disagreement between the model and the rules lowers the reported confidence rather than changing the score.
+
+Suggestions produced by the RRI only rearrange or trim words that are already present, for example moving an existing result to the front of a bullet. Where a fact is missing, the system asks the user for it instead of supplying one.
+
+\subsection{ATS 2.0 views: simulated skim, impact quotient and naive parsers}
+Three further reports make the abstract scores concrete.
+
+\textit{Simulated skim.} Each line $\ell$ on the page receives a weight
+\begin{equation}
+\omega_\ell = r_\ell \cdot e^{-\kappa\, y_\ell / H}\cdot \delta^{\,p_\ell}\cdot \left(1-\beta\,\frac{x_\ell}{W}\right),
+\end{equation}
+where $r_\ell$ depends on the line's role (heading and job title 1.0, contact 0.9, entry metadata 0.65, bullet 0.55), $y_\ell/H$ is its vertical position on page $p_\ell$, $x_\ell/W$ its left indent, $\kappa=1.6$, $\delta=0.55$ and $\beta=0.35$. A budget of $7.4\,\mathrm{s}\times 4$ fixations per second is spread over lines in proportion to $\omega_\ell$, and a line counts as seen once it receives 0.6 fixations. The parameters encode the qualitative findings of recruiter eye-tracking studies \cite{ladders2018}; they are assumptions, not measured constants, and the interface says so.
+
+\textit{Verifiable Impact Quotient (VIQ).} VIQ is the section-weighted percentage of graded bullets that contain an action, a named object and a quantified outcome. It reuses the RRI's per-bullet properties, so the two measures cannot disagree about what a bullet contains.
+
+\textit{Naive parser views.} Real ATS parsers are proprietary, so ResumeX does not claim to emulate them. Instead it extracts the PDF in three deliberately simple ways (raw content-stream order, full-width rows with no column detection, and concatenated table cells) and reports each view's token-order similarity to the layout-aware reading order, whether contact details and dates survive, and glyphs such as ligatures or icon fonts that commonly become noise.
+
+\subsection{Semantic matching with a fine-tuned encoder}
+When a job description is provided, it is parsed into required skills, preferred skills, responsibilities and education requirements. The fit score is a weighted sum over seven dimensions: required skills (30), relevant experience (20), relevant projects (15), responsibilities (15), preferred skills (10), education (5) and whole-document semantic relevance (5). Skills are first matched exactly, then through 168 aliases (for example \textit{k8s} and \textit{Kubernetes}), then through a taxonomy of related skills that earn partial credit, and finally through embedding similarity above a threshold of 0.65, scaled down to 0.8 of the similarity so that a semantic match never counts as much as a literal one. Whole-document similarity $c$ is mapped linearly from the useful range $[0.30, 0.85]$ to $[0,1]$.
+
+The encoder is \textit{bge-small-en-v1.5} \cite{xiao2023cpack} fine-tuned with the CoSENT objective \cite{su2022cosent} on resume and job-description pairs from a public fit-labelled dataset \cite{resumefit}. Training used 6,363 pairs, with 914 held out for validation, two epochs, a batch size of 16 and a learning rate of $2\times10^{-5}$. The resulting model, \textit{bge-small-resumex}, has 33 million parameters and runs on a laptop CPU or GPU.
+
+\subsection{Hybrid retrieval}
+Recommendations, project suggestions and some rewrites draw on a knowledge base of 26 chunks: role norms for software and data or machine-learning engineering (7), skill relationships (13), writing guidance (3) and project archetypes (3). For a query $q$ and chunk $d$, the retrieval score is
+\begin{equation}
+S(q,d)=0.65\,\cos\!\left(\mathbf{e}_q,\mathbf{e}_d\right)+0.35\,\frac{\mathrm{BM25}(q,d)}{\max_{d'}\mathrm{BM25}(q,d')},
+\end{equation}
+so that a named tool that the encoder represents poorly is still found lexically. Every retrieved chunk carries an identifier, and generated text that cites a chunk is checked against it.
+
+\subsection{Tiered local language models}
+LLMs are served through Ollama in two tiers. A fast tier (Qwen3-4B, 4-bit quantised, 2,048-token context) stays resident and serves the editor, where suggestions stream token by token. A deep tier (Qwen2.5-7B \cite{qwen2024}, 4-bit, 4,096-token context) is loaded for background work such as grading every bullet and judging each job requirement, and is unloaded two minutes later so that both tiers fit in 8~GB of GPU memory. All calls use temperature 0, a fixed seed, delimiters around user text and a JSON output schema. If Ollama is not running, every feature falls back to its rule-based path and the interface states which path produced each result.
+
+\subsection{Grounding guards}
+Every rewrite, from either tier, passes a validator before it is shown. The validator extracts all numbers from the rewrite and compares them by value with numbers in the original bullet, its entry header and any facts the user typed; ``three'', ``3'', ``1.2k'' and ``1,200'' are treated as equal. A number that can be derived from grounded numbers (for example a percentage change between two stated latencies) is allowed but flagged for the user to check. Named entities are compared through a directional taxonomy: aliases are equal in both directions, a specific term may be generalised (PostgreSQL to ``relational database'') but never specialised, ambiguous aliases count only when written as a tool name, and matching is by whole word so that \textit{Java} is not grounded by \textit{JavaScript}. Any unsupported number or entity rejects the rewrite, and rejected drafts are listed with their reasons rather than silently dropped.
+
+\subsection{Grounded mock interview}
+The interview module builds three rounds of questions from three sources: the candidate's own strongest claims (each question cites the statement it probes), the job description's requirements turned into scenarios, and behavioural prompts derived from culture signals in the job description. Answers are graded on the STAR structure. The model returns, for each of situation, task, action and result, a presence label, a score out of 10 and a supporting quote. The code then checks that each quote is a verbatim substring of the answer, capping that part at 3 if it is not, and computes
+\begin{equation}
+\mathrm{STAR}=\sum_{j\in\{S,T,A,R\}} \lambda_j \,\frac{q_j}{10},\qquad \lambda=(15,15,35,35),
+\end{equation}
+so the model can describe an answer but cannot assign its final score. Numbers in the answer that do not appear in the resume are listed as likely follow-up questions.
+
+\subsection{Integrity checks}
+The hidden-text detector walks every text span in the PDF and flags spans drawn with render mode 3 (invisible), fill opacity below 10\%, a font size below 4~pt, a bounding box outside the page, or a colour whose contrast with the rendered background is too low to read. Spans containing job-description keywords are highlighted, because that pattern indicates an attempt to game keyword filters. A timeline check converts dated entries to month intervals and reports reversed ranges, finished roles dated in the future, overlapping full-time roles and unexplained gaps. An optional GitHub check compares the skills claimed for each project with the languages, topics and dependency manifests of the matching public repository; only the user name and repository names leave the machine.
+
+\subsection{In-place editing in the original layout}
+Most resume editors export the edited text into their own template, which discards the formatting the candidate chose. ResumeX instead edits the uploaded PDF. The page is divided into units, each a run of text on one line, such as a heading, the left part of a title row or one line of a bullet. An edit replaces the text of one unit, or of the consecutive units of a multi-line bullet, in the original font where the glyphs are available (or the closest installed match), at the original size, colour and baseline, and within the horizontal space available on that row. If the new text is too long, it is first condensed down to 88\% of its natural width; if it still does not fit, the edit is rejected and the original page is left unchanged. The user can accept every pending, fully grounded suggestion with a single action, and all accepted edits are applied through this same path, so the document's template is never altered.
+
+\section{Experimental setup}
+\label{sec:setup}
+
+All experiments run the system's own code on a laptop with an Intel Core i7 CPU, 24~GB of RAM and an RTX 4060 GPU with 8~GB of memory. The deterministic pipeline was run on the CPU with the LLM disabled, so that the reported scores are reproducible.
+
+\textit{Corpus.} We used the 12 distinct PDF resumes uploaded to the system during development, after removing exact duplicates by file hash. They are a convenience sample of student and early-career resumes; the system inferred an AI or machine-learning profile for six of them, a web or backend engineering profile for two, and could not infer a role for four. They have 1 to 3 pages (mean 1.9) and 123 graded bullets in total. Only aggregate statistics are reported.
+
+\textit{Fact-checker test.} Because no labelled corpus of faithful and unfaithful resume rewrites exists, we generated controlled perturbations of the 117 real bullets that had at least five words. Faithful variants swapped the opening verb, trimmed the bullet to three quarters of its length, or reordered two clauses. Unfaithful variants appended a percentage improvement, appended a user count, inflated an existing number, or appended a tool not mentioned in the bullet. This yields 282 faithful and 386 unfaithful rewrites.
+
+\textit{Hidden-text test.} For each of the 12 resumes, we inserted the same keyword string onto the first page using five techniques (invisible render mode, white text, 1.5~pt text, near-white text and text placed outside the page), giving 60 manipulated files, and counted the files in which the detector reported the inserted keywords at high severity.
+
+\textit{In-place editing test.} From each resume we sampled 12 text runs of at least 25 characters and replaced each with text whose word count was 0.6 to 1.8 times the original, giving 144 edits per ratio. We recorded whether each edit was placed at full size, placed after condensing, or rejected.
+
+\textit{Embedding model.} We report the held-out Spearman correlation between cosine similarity and the fit labels for the base and fine-tuned encoders, as logged during training.
+
+\section{Results}
+\label{sec:results}
+
+\subsection{Machine readability and human readability diverge}
+Figure~\ref{fig:scores} compares the two axes. ATS scores were uniformly high (mean 93.7, standard deviation 5.2, range 82.5 to 100): the resumes were text-based, used standard headings and had no image-only content, so text extractability, formatting safety and parsing risk earned full marks on every document. The RRI was much lower (mean 66.2, standard deviation 10.0, range 39.3 to 76.7), and the weakest dimension was impact and evidence density, at 46\% of its points. The two scores are correlated ($r=0.77$, $n=12$), which is expected since a poorly structured document also reads badly, but every resume lies below the diagonal: passing the parser said little about whether a reviewer would understand the candidate's contribution. This gap is the main justification for reporting the two axes separately.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=\textwidth]{fig_scores}}
+\caption{(a) ATS compatibility against Recruiter Readability Index for the 12 resumes; the dashed line marks equal scores. (b, c) Mean share of points earned per rubric dimension, with one standard deviation.}
+\label{fig:scores}
+\end{figure}
+
+\subsection{Most bullets describe activity, not results}
+Of the 123 graded bullets, 17 (13.8\%) received grade A, 12 (9.8\%) grade B, 48 (39.0\%) grade C and 46 (37.4\%) grade D (Fig.~\ref{fig:bullets}). The four properties explain the distribution: 84\% of bullets opened with an action verb and 74\% named something specific, but only 26\% stated an outcome and 15\% quantified it. Experience bullets were the weakest group, with 39 of 57 graded D, mostly because they began with phrases such as ``responsible for'' or ``worked on''. Project bullets did better, with 13 of 44 graded A, because students tend to report accuracy figures and dataset sizes for projects. The mean VIQ was 15.8 (18.2 after section weighting), consistent with the low share of quantified outcomes. The simulated skim reached a mean of 27\% of lines (range 12\% to 57\%), concentrated on headings and job titles near the top of the first page. Each resume produced between 6 and 22 line-anchored findings (mean 16.4).
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.95\textwidth]{fig_bullets}}
+\caption{(a) Bullet grades by section across the corpus. (b) Share of bullets with each of the four properties used for grading.}
+\label{fig:bullets}
+\end{figure}
+
+\subsection{Naive parsing and integrity}
+On this corpus, the naive parser views agreed closely with the layout-aware reading order (mean token-order integrity 0.984 for stream order and 0.998 for full-width rows), because none of the documents used multi-column layouts or tables. One resume contained a glyph that commonly becomes noise in plain-text extraction. The timeline check reported a mean of 2.3 issues per resume. Most were end dates in the future (11), which on student resumes usually mark an expected graduation or an ongoing project, followed by undated entries (6) and work dated before graduation (6); only three overlaps and one gap were found. These are prompts to clarify the dates rather than errors.
+
+Table~\ref{tab:stealth} reports the hidden-text test. The detector found the injected keywords in all 60 manipulated files, across all five techniques. On the 12 unmodified files, it flagged spans in one file (2 words in total); we did not establish whether that text was intentionally hidden, so we report it as a possible false positive.
+
+\begin{table}[h]
+\caption{Hidden-text detection on 12 resumes with keywords injected by five techniques.}
+\label{tab:stealth}
+\begin{tabular*}{\hsize}{@{\extracolsep{\fill}}lll@{}}
+\toprule
+Injection technique & Signal used & Files detected\\
+\colrule
+Render mode 3 (no fill, no stroke) & render mode & 12 / 12\\
+White text on white background & rendered contrast & 12 / 12\\
+Near-white text (RGB 0.97) & rendered contrast & 12 / 12\\
+1.5 pt font & font size & 12 / 12\\
+Text placed outside the page & bounding box & 12 / 12\\
+\colrule
+Unmodified files flagged & any & 1 / 12\\
+\botrule
+\end{tabular*}
+\end{table}
+
+\subsection{The fact-checker rejects every fabricated detail}
+Table~\ref{tab:factcheck} summarises the fact-checker test. All 386 unfaithful rewrites were rejected, a recall of 1.00 for fabricated numbers and tools. Of the 282 faithful rewrites, 278 were accepted (98.6\%). All four false rejections came from the same two bullets, which contained figures written as ``50K+'' and ``2K+''; the entity extractor read the suffix ``K+'' as an unrecognised named entity. This is a tokenisation bug rather than a design limitation, and it is straightforward to fix. A false rejection costs the user one suggestion; a false acceptance would put an invented claim on the resume, so we consider this trade-off acceptable. The perturbations are synthetic and simple, and an LLM can fabricate in subtler ways, for example by paraphrasing a claim into a stronger one without adding a number or a name. These results should therefore be read as a check that the guard catches the common fabrication patterns, not as a measure of its accuracy on model output in general.
+
+\begin{table}[h]
+\caption{Fact-checker decisions on controlled rewrites of 117 real bullets.}
+\label{tab:factcheck}
+\begin{tabular*}{\hsize}{@{\extracolsep{\fill}}llll@{}}
+\toprule
+Rewrite type & Should pass & Cases & Correct decisions\\
+\colrule
+Verb swap & yes & 117 & 115 (98.3\%)\\
+Trim to 75\% & yes & 117 & 115 (98.3\%)\\
+Clause reorder & yes & 48 & 48 (100\%)\\
+Added percentage & no & 117 & 117 (100\%)\\
+Added user count & no & 117 & 117 (100\%)\\
+Inflated existing number & no & 35 & 35 (100\%)\\
+Added tool or technology & no & 117 & 117 (100\%)\\
+\colrule
+All faithful / all unfaithful & & 282 / 386 & 98.6\% / 100\%\\
+\botrule
+\end{tabular*}
+\end{table}
+
+\subsection{Fine-tuning the encoder roughly doubles rank correlation}
+Figure~\ref{fig:embed} shows the fine-tuning run. Training loss fell from 4.57 to 3.60 over two epochs and validation loss from 2.52 to 2.50, while validation Spearman correlation rose from 0.519 after the first epoch to 0.549 after the second. On the held-out test split, Spearman correlation between cosine similarity and the fit labels rose from 0.369 for the base encoder to 0.695 for the fine-tuned one. The gap between test and validation correlation suggests that the two splits differ in difficulty, and the training sample shown in the model card contains many pairs labelled as no fit; a split balanced by label would give a more reliable estimate.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.9\textwidth]{fig_embedding}}
+\caption{(a) CoSENT training loss, validation loss and validation Spearman correlation while fine-tuning bge-small-en-v1.5. (b) Spearman correlation with fit labels on the held-out test split before and after fine-tuning.}
+\label{fig:embed}
+\end{figure}
+
+\subsection{In-place editing preserves the template for most realistic edits}
+Figure~\ref{fig:inplace} shows how edits fared as replacement text grew. Edits that kept or shortened the text were placed at full size in 96.5\% of cases; the remaining 3.5\% failed because a glyph was missing from every available font or a run continued onto another page. At 10\% longer text, 94.4\% of edits were still placed, a quarter of them after condensing. Beyond that, the share fell steadily, to 64.6\% at 1.3 times the original length and 43.1\% at 1.8 times. These are exactly the cases where the editor refuses to reflow the page: the rejected edit is listed, the template is untouched, and the change remains available in the re-typeset DOCX and LaTeX exports. Applying one edit took a median of 3.5~ms (95th percentile 8.3~ms), fast enough to re-render the page preview on every keystroke.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.78\textwidth]{fig_inplace}}
+\caption{Outcome of in-place edits as a function of the replacement text's length relative to the original.}
+\label{fig:inplace}
+\end{figure}
+
+\subsection{Latency}
+Figure~\ref{fig:latency} shows per-stage latency on the CPU. Layout parsing took a median of 92~ms per resume, the ATS rules under 1~ms and RRI grading 23~ms. The slowest stage was the hidden-text scan (median 594~ms), because it renders each page to test contrast; it runs only once per upload. The complete deterministic analysis therefore finishes in about one second, which allows the interface to show scores immediately and run the slower LLM review as a background job with progress updates.
+
+\begin{figure}[t]\vspace*{4pt}
+\centerline{\includegraphics[width=0.62\textwidth]{fig_latency}}
+\caption{Per-stage latency of the deterministic pipeline on the CPU (median with minimum and maximum over 12 resumes; logarithmic scale).}
+\label{fig:latency}
+\end{figure}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\textit{Why scores stay deterministic.} Keeping the LLM out of scoring has a cost: a rule-based grader misses nuance that a model could catch, such as a bullet whose outcome is implied rather than stated. In exchange, a candidate who edits one bullet sees a score change that can be explained exactly, two runs on the same file always agree, and the score does not depend on whether a GPU is available. The LLM's role as a second voter that lowers confidence when it disagrees keeps some of its judgement without letting it move the number.
+
+\textit{Limitations.} The evaluation corpus is small and not representative of all professions, career stages or regions; the high ATS scores in particular reflect a group of candidates who already used text-based templates. The RRI weights and the skim parameters are design choices informed by published guidance, not values fitted to recruiter judgements, and we have not yet measured agreement between RRI grades and human reviewers. The fact-checker test uses synthetic perturbations and does not cover rewrites that strengthen a claim without adding a number or entity. The fine-tuned encoder was trained on a single public dataset whose labels and licence should be reviewed before any redistribution. Finally, the in-place editor cannot insert a new bullet into the original layout, because that would require moving every element below it.
+
+\textit{Ethical considerations.} ResumeX is built for candidates, not for screening them: it never ranks one applicant against another, and all processing is local unless the user opts in to a network feature. It detects hidden keyword text instead of generating it, and it will not supply metrics the candidate has not provided. Accounts are optional; when used, passwords are stored as salted PBKDF2 hashes and session tokens only as SHA-256 digests. Because the system evaluates writing, it can still encode norms that disadvantage candidates whose conventions differ from those in the role norms, and its output should be read as advice rather than as a prediction of hiring outcomes.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+ResumeX shows that a resume assistant can be useful without being opaque or inventive. Separating machine readability from human readability exposed a consistent gap on our corpus: documents that a parser handles well still mostly describe activity rather than results. A deterministic fact-checker placed after the language model stopped every fabricated number and tool in our tests at a small cost in rejected faithful suggestions, and editing the candidate's own PDF in place kept their template intact for nearly all edits of realistic length. Future work will measure agreement between RRI grades and experienced reviewers, extend the evaluation to a larger and more varied corpus, evaluate the grounding guards on real model output, and test whether a fine-tuned small model can replace the 7B model for requirement judging without loss of accuracy.
+
+\section*{Acknowledgements}
+
+The authors thank the School of Computing, Amrita Vishwa Vidyapeetham, Amritapuri Campus, for its support. The fine-tuning data come from a public resume and job-description fit dataset \cite{resumefit}; no user data were used for training.
+
+\begin{thebibliography}{99}
+
+\bibitem{ladders2018}
+Ladders, Inc. (2018) ``Eye-tracking study.'' Ladders research report, New York. Update of the 2012 Ladders eye-tracking study of recruiters.
+
+\bibitem{ji2023hallucination}
+Ji, Ziwei, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Ye Jin Bang, Andrea Madotto, and Pascale Fung. (2023) ``Survey of hallucination in natural language generation.'' {\it ACM Computing Surveys} {\bf 55} (12): 1--38.
+
+\bibitem{bhatia2019}
+Bhatia, Vedant, Prateek Rawat, Ajit Kumar, and Rajiv Ratn Shah. (2019) ``End-to-end resume parsing and finding candidates for a job description using BERT.'' {\it arXiv preprint} arXiv:1910.03089.
+
+\bibitem{zhu2018pjfnn}
+Zhu, Chen, Hengshu Zhu, Hui Xiong, Chao Ma, Fang Xie, Pengliang Ding, and Pan Li. (2018) ``Person-job fit: adapting the right talent for the right job with joint representation learning.'' {\it ACM Transactions on Management Information Systems} {\bf 9} (3): 12:1--12:17.
+
+\bibitem{qin2018apjfnn}
+Qin, Chuan, Hengshu Zhu, Tong Xu, Chen Zhu, Liang Jiang, Enhong Chen, and Hui Xiong. (2018) ``Enhancing person-job fit for talent recruitment: an ability-aware neural network approach.'' {\it Proceedings of the 41st International ACM SIGIR Conference on Research and Development in Information Retrieval}: 25--34.
+
+\bibitem{reimers2019sbert}
+Reimers, Nils, and Iryna Gurevych. (2019) ``Sentence-BERT: sentence embeddings using Siamese BERT-networks.'' {\it Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing}: 3982--3992.
+
+\bibitem{xiao2023cpack}
+Xiao, Shitao, Zheng Liu, Peitian Zhang, and Niklas Muennighoff. (2023) ``C-Pack: packaged resources to advance general Chinese embedding.'' {\it arXiv preprint} arXiv:2309.07597.
+
+\bibitem{su2022cosent}
+Su, Jianlin. (2022) ``CoSENT: a more efficient sentence vector scheme than Sentence-BERT.'' Technical note, available at https://kexue.fm/archives/8847.
+
+\bibitem{lewis2020rag}
+Lewis, Patrick, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich K\"{u}ttler, Mike Lewis, Wen-tau Yih, Tim Rockt\"{a}schel, Sebastian Riedel, and Douwe Kiela. (2020) ``Retrieval-augmented generation for knowledge-intensive NLP tasks.'' {\it Advances in Neural Information Processing Systems} {\bf 33}: 9459--9474.
+
+\bibitem{robertson2009bm25}
+Robertson, Stephen, and Hugo Zaragoza. (2009) ``The probabilistic relevance framework: BM25 and beyond.'' {\it Foundations and Trends in Information Retrieval} {\bf 3} (4): 333--389.
+
+\bibitem{raghavan2020}
+Raghavan, Manish, Solon Barocas, Jon Kleinberg, and Karen Levy. (2020) ``Mitigating bias in algorithmic hiring: evaluating claims and practices.'' {\it Proceedings of the 2020 Conference on Fairness, Accountability, and Transparency}: 469--481.
+
+\bibitem{wilson2024}
+Wilson, Kyra, and Aylin Caliskan. (2024) ``Gender, race, and intersectional bias in resume screening via language model retrieval.'' {\it Proceedings of the AAAI/ACM Conference on AI, Ethics, and Society} {\bf 7}: 1578--1590.
+
+\bibitem{greshake2023}
+Greshake, Kai, Sahar Abdelnabi, Shailesh Mishra, Christoph Endres, Thorsten Holz, and Mario Fritz. (2023) ``Not what you've signed up for: compromising real-world LLM-integrated applications with indirect prompt injection.'' {\it Proceedings of the 16th ACM Workshop on Artificial Intelligence and Security}: 79--90.
+
+\bibitem{qwen2024}
+Qwen Team. (2024) ``Qwen2.5 technical report.'' {\it arXiv preprint} arXiv:2412.15115.
+
+\bibitem{resumefit}
+cnamuangtoun. (2024) ``resume-job-description-fit'' [dataset]. Hugging Face Datasets, https://huggingface.co/datasets/cnamuangtoun/resume-job-description-fit.
+
+\end{thebibliography}
+
+\end{document}

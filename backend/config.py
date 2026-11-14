@@ -48,13 +48,21 @@ class Settings(BaseSettings):
     ats_weight_parsing_risk: int = 5
 
     # ── Hybrid match weights (must sum to 100) ───────────────────
-    match_weight_required_skills: int = 30
-    match_weight_preferred_skills: int = 10
-    match_weight_relevant_experience: int = 20
-    match_weight_relevant_projects: int = 15
-    match_weight_responsibilities: int = 15
+    # v2: on 300 labelled pairs the keyword dimensions did not track fit (AUC ~0.44) while embedding
+    # similarity did, so semantic relevance is now the main signal and the keyword dimensions mostly
+    # explain the score. Dimensions a JD gives nothing for are dropped and the rest rescaled to 100.
+    match_weight_required_skills: int = 20
+    match_weight_preferred_skills: int = 5
+    match_weight_relevant_experience: int = 5
+    match_weight_relevant_projects: int = 5
+    match_weight_responsibilities: int = 5
     match_weight_education: int = 5
-    match_weight_semantic_relevance: int = 5
+    match_weight_semantic_relevance: int = 55
+    # Cosine -> [0, 1] calibration for the semantic dimension (5th / 95th percentile of whole-document
+    # cosine on 400 training-split pairs with bge-small-resumex). Re-derive if the encoder changes.
+    match_semantic_cos_low: float = 0.55
+    match_semantic_cos_high: float = 0.88
+    match_semantic_doc_share: float = 0.6   # rest = per-requirement coverage
 
     # ── LLM settings (Phase 7+) ─────────────────────────────────
     llm_provider: str = "ollama"  # "ollama" | "llamacpp"

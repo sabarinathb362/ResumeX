@@ -1,0 +1,141 @@
+{
+  "dataset": "cnamuangtoun/resume-job-description-fit (test)",
+  "rows": 300,
+  "unique_resumes": 205,
+  "seconds": 284.4,
+  "variants": [
+    {
+      "variant": "ResumeX full match score",
+      "n": 300,
+      "spearman": 0.1554,
+      "pearson": 0.1439,
+      "auc_good_vs_no": 0.5794,
+      "auc_fit_vs_no": 0.6153,
+      "mean_by_label": {
+        "0.0": 25.06,
+        "0.5": 31.53,
+        "1.0": 28.27
+      }
+    },
+    {
+      "variant": "  dimension only: Required Skills",
+      "n": 300,
+      "spearman": -0.0258,
+      "pearson": -0.029,
+      "auc_good_vs_no": 0.4849,
+      "auc_fit_vs_no": 0.4877,
+      "mean_by_label": {
+        "0.0": 3.65,
+        "0.5": 3.59,
+        "1.0": 3.26
+      }
+    },
+    {
+      "variant": "  dimension only: Preferred Skills",
+      "n": 300,
+      "spearman": 0.1623,
+      "pearson": 0.1523,
+      "auc_good_vs_no": 0.5841,
+      "auc_fit_vs_no": 0.5394,
+      "mean_by_label": {
+        "0.0": 0.3,
+        "0.5": 0.26,
+        "1.0": 0.69
+      }
+    },
+    {
+      "variant": "  dimension only: Relevant Experience",
+      "n": 300,
+      "spearman": -0.0903,
+      "pearson": -0.0899,
+      "auc_good_vs_no": 0.421,
+      "auc_fit_vs_no": 0.4712,
+      "mean_by_label": {
+        "0.0": 1.1,
+        "0.5": 1.17,
+        "1.0": 0.91
+      }
+    },
+    {
+      "variant": "  dimension only: Relevant Projects",
+      "n": 300,
+      "spearman": 0.0927,
+      "pearson": 0.0909,
+      "auc_good_vs_no": 0.5157,
+      "auc_fit_vs_no": 0.5063,
+      "mean_by_label": {
+        "0.0": 0.03,
+        "0.5": 0.0,
+        "1.0": 0.16
+      }
+    },
+    {
+      "variant": "  dimension only: Responsibilities Alignment",
+      "n": 300,
+      "spearman": 0.0614,
+      "pearson": 0.0999,
+      "auc_good_vs_no": 0.534,
+      "auc_fit_vs_no": 0.5296,
+      "mean_by_label": {
+        "0.0": 0.72,
+        "0.5": 0.87,
+        "1.0": 1.09
+      }
+    },
+    {
+      "variant": "  dimension only: Education Alignment",
+      "n": 300,
+      "spearman": -0.0434,
+      "pearson": -0.0268,
+      "auc_good_vs_no": 0.4962,
+      "auc_fit_vs_no": 0.493,
+      "mean_by_label": {
+        "0.0": 0.04,
+        "0.5": 0.0,
+        "1.0": 0.03
+      }
+    },
+    {
+      "variant": "  dimension only: Semantic/Domain Relevance",
+      "n": 300,
+      "spearman": 0.2008,
+      "pearson": 0.186,
+      "auc_good_vs_no": 0.6058,
+      "auc_fit_vs_no": 0.6478,
+      "mean_by_label": {
+        "0.0": 15.12,
+        "0.5": 20.53,
+        "1.0": 17.88
+      }
+    },
+    {
+      "variant": "Ablation: no embeddings (rules + aliases only)",
+      "n": 300,
+      "spearman": 0.1731,
+      "pearson": 0.1644,
+      "auc_good_vs_no": 0.6134,
+      "auc_fit_vs_no": 0.6025,
+      "mean_by_label": {
+        "0.0": 24.96,
+        "0.5": 28.62,
+        "1.0": 28.77
+      }
+    },
+    {
+      "variant": "Ablation: embedding cosine only",
+      "n": 300,
+      "spearman": 0.2393,
+      "pearson": 0.2371,
+      "auc_good_vs_no": 0.6422,
+      "auc_fit_vs_no": 0.6573,
+      "mean_by_label": {
+        "0.0": 0.67,
+        "0.5": 0.71,
+        "1.0": 0.7
+      }
+    }
+  ],
+  "ats_mean": 88.05,
+  "rri_mean": 52.66,
+  "parse_failures_no_sections": 1
+}

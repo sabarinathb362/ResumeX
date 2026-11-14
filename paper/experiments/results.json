@@ -1,0 +1,946 @@
+{
+  "n_resumes": 12,
+  "resumes": [
+    {
+      "pages": 3,
+      "lines": 84,
+      "sections": 12,
+      "bullets": 8,
+      "ats": 95.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.9,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 1.0,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 75.4,
+      "rri_dims": {
+        "First-impression clarity": 0.9,
+        "Impact & evidence density": 0.57,
+        "Specificity & concreteness": 0.9,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.55,
+        "Narrative coherence": 0.55,
+        "Role-norm alignment": 0.65
+      },
+      "viq": 25.0,
+      "viq_weighted": 29.9,
+      "grades": {
+        "A": 2,
+        "C": 3,
+        "B": 1,
+        "D": 2
+      },
+      "findings": 21,
+      "severity": {
+        "high": 2,
+        "medium": 5,
+        "low": 14
+      },
+      "seen_share": 0.15,
+      "seen_by_role": {
+        "contact": 3,
+        "heading": 4,
+        "title": 6
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 102.38599999865983,
+        "ats": 0.5831000016769394,
+        "rri": 38.85699999227654,
+        "insights": 0.7007999956840649,
+        "skim": 0.5371000006562099,
+        "viq": 0.11940000695176423,
+        "parser_sim": 87.79879999929108,
+        "stealth": 1017.4600000027567,
+        "timeline": 0.25270000332966447
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 44,
+      "sections": 5,
+      "bullets": 5,
+      "ats": 100.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 1.0,
+        "Formatting Safety": 1.0,
+        "Contact Information": 1.0,
+        "Standard Headings": 1.0,
+        "Date Consistency": 1.0,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 63.4,
+      "rri_dims": {
+        "First-impression clarity": 0.7,
+        "Impact & evidence density": 0.29,
+        "Specificity & concreteness": 0.6,
+        "Clarity & concision": 0.933,
+        "Visual hierarchy & scan flow": 1.0,
+        "Narrative coherence": 0.56,
+        "Role-norm alignment": 0.5
+      },
+      "viq": 0.0,
+      "viq_weighted": 0.0,
+      "grades": {
+        "D": 4,
+        "B": 1
+      },
+      "findings": 6,
+      "severity": {
+        "high": 1,
+        "medium": 4,
+        "low": 1
+      },
+      "seen_share": 0.45,
+      "seen_by_role": {
+        "contact": 2,
+        "heading": 4,
+        "statement": 6,
+        "title": 8
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 1,
+      "latency_ms": {
+        "parse": 79.41090001258999,
+        "ats": 0.23079999664332718,
+        "rri": 22.496500008855946,
+        "insights": 0.08859999070409685,
+        "skim": 0.351999988197349,
+        "viq": 0.039399994420818985,
+        "parser_sim": 68.52270000672434,
+        "stealth": 467.81999999075197,
+        "timeline": 0.19409999367780983
+      }
+    },
+    {
+      "pages": 1,
+      "lines": 30,
+      "sections": 6,
+      "bullets": 10,
+      "ats": 82.5,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.747,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 0.83,
+        "Date Consistency": 1.0,
+        "Skill Visibility": 0.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 55.1,
+      "rri_dims": {
+        "First-impression clarity": 0.1,
+        "Impact & evidence density": 0.405,
+        "Specificity & concreteness": 0.4,
+        "Clarity & concision": 0.933,
+        "Visual hierarchy & scan flow": 1.0,
+        "Narrative coherence": 1.0,
+        "Role-norm alignment": 0.5
+      },
+      "viq": 30.0,
+      "viq_weighted": 30.0,
+      "grades": {
+        "D": 7,
+        "A": 3
+      },
+      "findings": 15,
+      "severity": {
+        "high": 5,
+        "medium": 6,
+        "low": 4
+      },
+      "seen_share": 0.57,
+      "seen_by_role": {
+        "contact": 1,
+        "heading": 6,
+        "statement": 9,
+        "title": 1
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 3,
+      "latency_ms": {
+        "parse": 39.1280000039842,
+        "ats": 0.20540000696200877,
+        "rri": 14.750799993635155,
+        "insights": 0.16700000560376793,
+        "skim": 0.23180000425782055,
+        "viq": 0.05810000584460795,
+        "parser_sim": 29.149499998311512,
+        "stealth": 334.63599999959115,
+        "timeline": 0.20399999630171806
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 84,
+      "sections": 12,
+      "bullets": 8,
+      "ats": 95.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.9,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 1.0,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 67.3,
+      "rri_dims": {
+        "First-impression clarity": 0.6,
+        "Impact & evidence density": 0.585,
+        "Specificity & concreteness": 0.84,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.55,
+        "Narrative coherence": 0.4,
+        "Role-norm alignment": 0.65
+      },
+      "viq": 25.0,
+      "viq_weighted": 29.9,
+      "grades": {
+        "A": 2,
+        "C": 4,
+        "B": 1,
+        "D": 1
+      },
+      "findings": 22,
+      "severity": {
+        "high": 3,
+        "medium": 5,
+        "low": 14
+      },
+      "seen_share": 0.15,
+      "seen_by_role": {
+        "contact": 3,
+        "heading": 4,
+        "title": 6
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 103.80100000475068,
+        "ats": 0.3341000119689852,
+        "rri": 23.720900004263967,
+        "insights": 0.2693999995244667,
+        "skim": 0.49310000031255186,
+        "viq": 0.0847999908728525,
+        "parser_sim": 94.72789999563247,
+        "stealth": 911.8713000061689,
+        "timeline": 0.19699998665601015
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 84,
+      "sections": 12,
+      "bullets": 8,
+      "ats": 95.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.9,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 1.0,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 67.3,
+      "rri_dims": {
+        "First-impression clarity": 0.6,
+        "Impact & evidence density": 0.585,
+        "Specificity & concreteness": 0.84,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.55,
+        "Narrative coherence": 0.4,
+        "Role-norm alignment": 0.65
+      },
+      "viq": 25.0,
+      "viq_weighted": 29.9,
+      "grades": {
+        "A": 2,
+        "C": 4,
+        "B": 1,
+        "D": 1
+      },
+      "findings": 22,
+      "severity": {
+        "high": 3,
+        "medium": 5,
+        "low": 14
+      },
+      "seen_share": 0.15,
+      "seen_by_role": {
+        "contact": 3,
+        "heading": 4,
+        "title": 6
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 95.55559999716934,
+        "ats": 0.31879999733064324,
+        "rri": 24.508100003004074,
+        "insights": 0.2677000011317432,
+        "skim": 0.5066000012448058,
+        "viq": 0.0653000024612993,
+        "parser_sim": 96.49609999905806,
+        "stealth": 885.9758000035072,
+        "timeline": 0.2420999953756109
+      }
+    },
+    {
+      "pages": 1,
+      "lines": 40,
+      "sections": 4,
+      "bullets": 19,
+      "ats": 82.8,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.853,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.5,
+        "Standard Headings": 1.0,
+        "Date Consistency": 1.0,
+        "Skill Visibility": 0.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 39.3,
+      "rri_dims": {
+        "First-impression clarity": 0.4,
+        "Impact & evidence density": 0.24,
+        "Specificity & concreteness": 0.1,
+        "Clarity & concision": 0.0,
+        "Visual hierarchy & scan flow": 1.0,
+        "Narrative coherence": 1.0,
+        "Role-norm alignment": 0.5
+      },
+      "viq": 5.3,
+      "viq_weighted": 5.7,
+      "grades": {
+        "D": 14,
+        "C": 4,
+        "A": 1
+      },
+      "findings": 13,
+      "severity": {
+        "critical": 2,
+        "high": 5,
+        "medium": 4,
+        "low": 2
+      },
+      "seen_share": 0.45,
+      "seen_by_role": {
+        "contact": 2,
+        "statement": 5,
+        "heading": 3,
+        "title": 5,
+        "meta": 3
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 1,
+      "hidden_words": 0,
+      "timeline_issues": 6,
+      "latency_ms": {
+        "parse": 68.29460000153631,
+        "ats": 0.25570001162122935,
+        "rri": 17.413100009434856,
+        "insights": 0.1973000034922734,
+        "skim": 0.27350000164005905,
+        "viq": 0.08230000094044954,
+        "parser_sim": 71.49210000352468,
+        "stealth": 234.75679999683052,
+        "timeline": 0.2739999908953905
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 84,
+      "sections": 12,
+      "bullets": 8,
+      "ats": 95.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.9,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 1.0,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 70.5,
+      "rri_dims": {
+        "First-impression clarity": 0.7,
+        "Impact & evidence density": 0.585,
+        "Specificity & concreteness": 0.92,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.55,
+        "Narrative coherence": 0.4,
+        "Role-norm alignment": 0.65
+      },
+      "viq": 25.0,
+      "viq_weighted": 29.9,
+      "grades": {
+        "A": 2,
+        "C": 4,
+        "B": 1,
+        "D": 1
+      },
+      "findings": 18,
+      "severity": {
+        "high": 3,
+        "medium": 3,
+        "low": 12
+      },
+      "seen_share": 0.15,
+      "seen_by_role": {
+        "contact": 3,
+        "heading": 4,
+        "title": 6
+      },
+      "parser_integrity": {
+        "stream": 0.836,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 100.18819999822881,
+        "ats": 0.28500000189524144,
+        "rri": 21.78759999515023,
+        "insights": 0.24619999749120325,
+        "skim": 0.5918000097153708,
+        "viq": 0.07069999992381781,
+        "parser_sim": 96.52079999796115,
+        "stealth": 648.7673000083305,
+        "timeline": 0.2945000014733523
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 74,
+      "sections": 8,
+      "bullets": 5,
+      "ats": 94.5,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 1.0,
+        "Formatting Safety": 1.0,
+        "Contact Information": 1.0,
+        "Standard Headings": 0.75,
+        "Date Consistency": 0.7,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 64.4,
+      "rri_dims": {
+        "First-impression clarity": 0.7,
+        "Impact & evidence density": 0.285,
+        "Specificity & concreteness": 0.6,
+        "Clarity & concision": 0.933,
+        "Visual hierarchy & scan flow": 1.0,
+        "Narrative coherence": 0.67,
+        "Role-norm alignment": 0.5
+      },
+      "viq": 0.0,
+      "viq_weighted": 0.0,
+      "grades": {
+        "D": 4,
+        "B": 1
+      },
+      "findings": 8,
+      "severity": {
+        "high": 1,
+        "medium": 4,
+        "low": 3
+      },
+      "seen_share": 0.18,
+      "seen_by_role": {
+        "contact": 4,
+        "heading": 5,
+        "statement": 1,
+        "title": 3
+      },
+      "parser_integrity": {
+        "stream": 0.977,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 2,
+      "timeline_issues": 3,
+      "latency_ms": {
+        "parse": 87.38769999763463,
+        "ats": 0.2471999905537814,
+        "rri": 26.470199998584576,
+        "insights": 0.07239999831654131,
+        "skim": 0.4797000001417473,
+        "viq": 0.03819999983534217,
+        "parser_sim": 89.70470000349451,
+        "stealth": 744.2970999982208,
+        "timeline": 0.18689999706111848
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 49,
+      "sections": 8,
+      "bullets": 8,
+      "ats": 96.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 1.0,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 1.0,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 0.9,
+        "Parsing Risk": 1.0
+      },
+      "rri": 76.7,
+      "rri_dims": {
+        "First-impression clarity": 0.9,
+        "Impact & evidence density": 0.57,
+        "Specificity & concreteness": 0.9,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.7,
+        "Narrative coherence": 0.53,
+        "Role-norm alignment": 0.65
+      },
+      "viq": 25.0,
+      "viq_weighted": 29.4,
+      "grades": {
+        "D": 2,
+        "A": 2,
+        "C": 3,
+        "B": 1
+      },
+      "findings": 20,
+      "severity": {
+        "high": 2,
+        "medium": 5,
+        "low": 13
+      },
+      "seen_share": 0.39,
+      "seen_by_role": {
+        "contact": 2,
+        "heading": 7,
+        "title": 10
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 0,
+      "latency_ms": {
+        "parse": 79.87479999428615,
+        "ats": 0.22020000324118882,
+        "rri": 19.996499991975725,
+        "insights": 0.19869999960064888,
+        "skim": 0.48219999007415026,
+        "viq": 0.05889999738428742,
+        "parser_sim": 72.94159999582916,
+        "stealth": 529.0814000036335,
+        "timeline": 0.2057999954558909
+      }
+    },
+    {
+      "pages": 3,
+      "lines": 93,
+      "sections": 7,
+      "bullets": 15,
+      "ats": 95.1,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 1.0,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 0.86,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 76.2,
+      "rri_dims": {
+        "First-impression clarity": 0.8,
+        "Impact & evidence density": 0.45,
+        "Specificity & concreteness": 0.873,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.7,
+        "Narrative coherence": 0.88,
+        "Role-norm alignment": 0.73
+      },
+      "viq": 0.0,
+      "viq_weighted": 0.0,
+      "grades": {
+        "B": 3,
+        "C": 9,
+        "D": 3
+      },
+      "findings": 15,
+      "severity": {
+        "high": 2,
+        "medium": 3,
+        "low": 10
+      },
+      "seen_share": 0.12,
+      "seen_by_role": {
+        "contact": 4,
+        "heading": 3,
+        "title": 4
+      },
+      "parser_integrity": {
+        "stream": 0.999,
+        "rows": 0.978
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 170.68149999249727,
+        "ats": 0.352299990481697,
+        "rri": 45.2781999920262,
+        "insights": 0.5297000025166199,
+        "skim": 1.1017000069841743,
+        "viq": 0.3404000017326325,
+        "parser_sim": 215.6463999999687,
+        "stealth": 538.939299993217,
+        "timeline": 0.2508000034140423
+      }
+    },
+    {
+      "pages": 1,
+      "lines": 42,
+      "sections": 4,
+      "bullets": 21,
+      "ats": 98.5,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 1.0,
+        "Formatting Safety": 1.0,
+        "Contact Information": 1.0,
+        "Standard Headings": 1.0,
+        "Date Consistency": 1.0,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 0.7,
+        "Parsing Risk": 1.0
+      },
+      "rri": 70.7,
+      "rri_dims": {
+        "First-impression clarity": 0.7,
+        "Impact & evidence density": 0.385,
+        "Specificity & concreteness": 0.72,
+        "Clarity & concision": 0.667,
+        "Visual hierarchy & scan flow": 1.0,
+        "Narrative coherence": 0.92,
+        "Role-norm alignment": 0.9
+      },
+      "viq": 4.8,
+      "viq_weighted": 3.5,
+      "grades": {
+        "C": 13,
+        "D": 6,
+        "B": 1,
+        "A": 1
+      },
+      "findings": 15,
+      "severity": {
+        "critical": 1,
+        "high": 2,
+        "medium": 4,
+        "low": 8
+      },
+      "seen_share": 0.33,
+      "seen_by_role": {
+        "contact": 2,
+        "heading": 3,
+        "title": 5,
+        "statement": 1,
+        "meta": 3
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 61.43250000604894,
+        "ats": 0.2426999999443069,
+        "rri": 25.526600002194755,
+        "insights": 0.11560000712051988,
+        "skim": 0.34479999158065766,
+        "viq": 0.11189999349880964,
+        "parser_sim": 66.34850001137238,
+        "stealth": 326.1891000001924,
+        "timeline": 0.18940000154543668
+      }
+    },
+    {
+      "pages": 2,
+      "lines": 82,
+      "sections": 12,
+      "bullets": 8,
+      "ats": 95.0,
+      "ats_dims": {
+        "Text Extractability": 1.0,
+        "Section Structure": 0.9,
+        "Formatting Safety": 1.0,
+        "Contact Information": 0.8,
+        "Standard Headings": 1.0,
+        "Date Consistency": 0.85,
+        "Skill Visibility": 1.0,
+        "Links & Contact Validity": 1.0,
+        "Parsing Risk": 1.0
+      },
+      "rri": 68.0,
+      "rri_dims": {
+        "First-impression clarity": 0.6,
+        "Impact & evidence density": 0.585,
+        "Specificity & concreteness": 0.84,
+        "Clarity & concision": 1.0,
+        "Visual hierarchy & scan flow": 0.55,
+        "Narrative coherence": 0.47,
+        "Role-norm alignment": 0.65
+      },
+      "viq": 25.0,
+      "viq_weighted": 29.9,
+      "grades": {
+        "A": 2,
+        "C": 4,
+        "B": 1,
+        "D": 1
+      },
+      "findings": 22,
+      "severity": {
+        "high": 3,
+        "medium": 5,
+        "low": 14
+      },
+      "seen_share": 0.16,
+      "seen_by_role": {
+        "contact": 3,
+        "heading": 3,
+        "title": 7
+      },
+      "parser_integrity": {
+        "stream": 1.0,
+        "rows": 1.0
+      },
+      "glyph_issues": 0,
+      "hidden_words": 0,
+      "timeline_issues": 2,
+      "latency_ms": {
+        "parse": 123.62500000745058,
+        "ats": 0.2741999924182892,
+        "rri": 20.894199988106266,
+        "insights": 0.2241000038338825,
+        "skim": 0.4199999966658652,
+        "viq": 0.14059999375604093,
+        "parser_sim": 91.62769999238662,
+        "stealth": 841.6953999985708,
+        "timeline": 0.2449000021442771
+      }
+    }
+  ],
+  "bullets": {
+    "n": 123,
+    "grades": {
+      "A": 17,
+      "C": 48,
+      "B": 12,
+      "D": 46
+    },
+    "flags": {
+      "action": 103,
+      "specific": 91,
+      "outcome": 32,
+      "metric": 18
+    },
+    "by_section": {
+      "leadership": {
+        "D": 1
+      },
+      "volunteer": {
+        "C": 13,
+        "D": 3
+      },
+      "extracurricular": {
+        "C": 5
+      },
+      "projects": {
+        "A": 13,
+        "C": 19,
+        "B": 9,
+        "D": 3
+      },
+      "experience": {
+        "D": 39,
+        "B": 3,
+        "A": 4,
+        "C": 11
+      }
+    }
+  },
+  "factcheck": {
+    "tp": 386,
+    "fn": 0,
+    "tn": 278,
+    "fp": 4,
+    "recall_unfaithful": 1.0,
+    "precision_reject": 0.9897435897435898,
+    "faithful_acceptance": 0.9858156028368794,
+    "per_kind": {
+      "verb_swap": {
+        "correct": 115,
+        "total": 117
+      },
+      "trim": {
+        "correct": 115,
+        "total": 117
+      },
+      "add_percent": {
+        "correct": 117,
+        "total": 117
+      },
+      "add_count": {
+        "correct": 117,
+        "total": 117
+      },
+      "inflate_number": {
+        "correct": 35,
+        "total": 35
+      },
+      "add_tool": {
+        "correct": 117,
+        "total": 117
+      },
+      "reorder": {
+        "correct": 48,
+        "total": 48
+      }
+    }
+  },
+  "stealth": {
+    "render_mode_3": {
+      "detected": 12,
+      "total": 12
+    },
+    "white_on_white": {
+      "detected": 12,
+      "total": 12
+    },
+    "tiny_font": {
+      "detected": 12,
+      "total": 12
+    },
+    "near_white": {
+      "detected": 12,
+      "total": 12
+    },
+    "off_page": {
+      "detected": 12,
+      "total": 12
+    },
+    "clean_false_positive_files": {
+      "flagged": 1,
+      "total": 12
+    }
+  },
+  "inplace": {
+    "by_ratio": {
+      "0.6": {
+        "ok": 139,
+        "fail": 5
+      },
+      "0.8": {
+        "ok": 139,
+        "fail": 5
+      },
+      "1.0": {
+        "ok": 139,
+        "fail": 5,
+        "scaled": 2
+      },
+      "1.1": {
+        "ok": 136,
+        "scaled": 36,
+        "fail": 8
+      },
+      "1.2": {
+        "fail": 30,
+        "ok": 114,
+        "scaled": 25
+      },
+      "1.3": {
+        "fail": 51,
+        "ok": 93,
+        "scaled": 13
+      },
+      "1.5": {
+        "fail": 62,
+        "ok": 82,
+        "scaled": 14
+      },
+      "1.8": {
+        "fail": 82,
+        "ok": 62,
+        "scaled": 12
+      }
+    },
+    "latency_ms_median": 3.521799990267027,
+    "latency_ms_p95": 8.32369999261573
+  }
+}

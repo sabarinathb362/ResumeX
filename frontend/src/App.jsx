@@ -443,7 +443,7 @@ function Dashboard({ results, analysis, review, onOpen, onExport, exporting, edi
                 <div className="bento-grid" style={{ marginBottom: '1rem' }}>
                   <div className="card span-6">
                     <div className="card-header"><span className="card-title">Match dimensions</span></div>
-                    {match.dimension_scores?.map((dim, i) => {
+                    {match.dimension_scores?.filter(dim => dim.max_score > 0).map((dim, i) => {
                       const pct = Math.round((dim.score / dim.max_score) * 100);
                       return (
                         <div key={i} className="dim-row" data-tone={status(pct)[1]}>
